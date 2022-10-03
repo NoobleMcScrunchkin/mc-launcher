@@ -5,7 +5,8 @@
   "scripts": {
     "watch": "npx tsc -w",
     "build": "npx tsc",
-    "start": "electron ./build/index.js"
+    "start": "electron ./build/index.js",
+    "dev-start": "npx tsc && electron ./build/index.js"
   },
   "author": "",
   "license": "ISC",

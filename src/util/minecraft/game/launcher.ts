@@ -1,8 +1,9 @@
 import { exec } from "child_process";
 import { Instance } from "./instance";
 import { User } from "../auth/user";
+import { BrowserWindow } from "electron";
 
-export function startGame(instance: Instance, user: User): void {
+export function startGame(instance: Instance, user: User, window: BrowserWindow): void {
 	let processCall = [
 		"java",
 		instance.java_args,
@@ -31,13 +32,10 @@ export function startGame(instance: Instance, user: User): void {
 		instance.mc_args,
 	];
 
-	const javaRuntime = exec(processCall.join(" "), function (error, stdout, stderr) {
-		if (error) {
-			console.log(error.stack);
-			console.log("Error code: " + error.code);
-			console.log("Signal received: " + error.signal);
-		}
-		console.log(stdout);
-		console.log(stderr);
+	const javaRuntime = exec(processCall.join(" "));
+
+	javaRuntime.stdout.on("data", function (msg) {
+		process.stdout.write(msg);
+		window.webContents.executeJavaScript(`console.log("${msg.replace(/(\r\n|\n|\r)/gm, "")}")`);
 	});
 }

@@ -1,9 +1,12 @@
-import fs from "fs";
+import { readFileSync, mkdirSync, createWriteStream, existsSync } from "fs";
 import fetch from "node-fetch";
 import https from "https";
 import path from "path";
+import { app } from "electron";
+import { v4 } from "uuid";
 
 export class Instance {
+	uuid: string = "00000000-0000-0000-0000-000000000000";
 	type: string = "";
 	version: string = "";
 	mc_dir: string = "";
@@ -18,14 +21,15 @@ export class Instance {
 	mc_args: string = "";
 	version_type: string = "release";
 
-	constructor(type: "vanilla" | "fabric" | "forge", version: string, dir: string) {
+	constructor(type: "vanilla" | "fabric" | "forge", version: string) {
+		this.uuid = v4();
 		this.type = type;
 		this.version = version;
-		this.mc_dir = path.resolve(dir);
+		this.mc_dir = path.resolve(app.getAppPath() + "/Storage/instances/" + this.uuid);
 	}
 
-	static async create(type: "vanilla" | "fabric" | "forge", version: string, dir: string): Promise<Instance> {
-		let instance = new Instance(type, version, dir);
+	static async create(type: "vanilla" | "fabric" | "forge", version: string): Promise<Instance> {
+		let instance = new Instance(type, version);
 		await instance.download_version_info();
 		await instance.init_data();
 		return instance;
@@ -33,7 +37,7 @@ export class Instance {
 
 	async download_version_info() {
 		console.log("Downloading version information");
-		let manifest = JSON.parse(fs.readFileSync(__dirname + "/../../../../Storage/version_manifest_v2.json").toString());
+		let manifest = JSON.parse(readFileSync(app.getAppPath() + "/Storage/version_manifest_v2.json").toString());
 		let version = manifest.versions.find((v: any) => v.id == this.version);
 		if (version) {
 			let res = await fetch(version.url);
@@ -52,14 +56,14 @@ export class Instance {
 		console.log("Downloading Asset Index: " + url);
 		return new Promise<any>((resolve, reject) => {
 			https.get(url, (res) => {
-				fs.mkdirSync(location, { recursive: true });
+				mkdirSync(location, { recursive: true });
 				const dlpath = location + "/" + id + ".json";
-				const filePath = fs.createWriteStream(dlpath);
+				const filePath = createWriteStream(dlpath);
 				res.pipe(filePath);
 				filePath.on("finish", async () => {
 					filePath.close();
 					console.log("Download Completed");
-					let file = fs.readFileSync(dlpath);
+					let file = readFileSync(dlpath);
 					let json = JSON.parse(file.toString());
 					resolve(json);
 				});
@@ -70,7 +74,7 @@ export class Instance {
 	async download_assets() {
 		console.log("Downloading Assets");
 
-		let assets_dir = __dirname + "/../../../../Storage/assets/";
+		let assets_dir = app.getAppPath() + "/Storage/assets/";
 		this.assets_dir = path.resolve(assets_dir);
 
 		let assetIndex = await this.download_asset_index(this.version_json.assetIndex.id, this.version_json.assetIndex.url, assets_dir + "indexes/");
@@ -82,7 +86,7 @@ export class Instance {
 		for (let key of Object.keys(assetIndex.objects)) {
 			let obj = assetIndex.objects[key];
 			let hash = obj.hash;
-			if (!fs.existsSync(assets_dir + "objects/" + hash.substring(0, 2) + "/" + hash)) {
+			if (!existsSync(assets_dir + "objects/" + hash.substring(0, 2) + "/" + hash)) {
 				await this.download_asset(hash, assets_dir + "objects/");
 			}
 		}
@@ -92,9 +96,9 @@ export class Instance {
 		console.log("Downloading Asset: " + hash);
 		return new Promise<boolean>((resolve, reject) => {
 			https.get("https://resources.download.minecraft.net/" + hash.substring(0, 2) + "/" + hash, (res) => {
-				fs.mkdirSync(assets_dir + "/" + hash.substring(0, 2), { recursive: true });
+				mkdirSync(assets_dir + "/" + hash.substring(0, 2), { recursive: true });
 				const dlpath = assets_dir + "/" + hash.substring(0, 2) + "/" + hash;
-				const filePath = fs.createWriteStream(dlpath);
+				const filePath = createWriteStream(dlpath);
 				res.pipe(filePath);
 				filePath.on("finish", () => {
 					filePath.close();
@@ -108,7 +112,7 @@ export class Instance {
 	async init_data() {
 		console.log("Init Data");
 		if (this.version_json.downloads && this.version_json.downloads.client && this.version_json.downloads.client.url) {
-			if (!fs.existsSync(__dirname + "/../../../../Storage/versions/" + this.version + "/" + this.version + ".jar")) {
+			if (!existsSync(app.getAppPath() + "/Storage/versions/" + this.version + "/" + this.version + ".jar")) {
 				await this.download_client();
 			}
 		}
@@ -142,7 +146,7 @@ export class Instance {
 
 				this.libraries.push(library);
 
-				if (!fs.existsSync(__dirname + "/../../../../Storage/libraries/" + jarPath + "/" + jarFile)) {
+				if (!existsSync(app.getAppPath() + "/Storage/libraries/" + jarPath + "/" + jarFile)) {
 					await this.download_library(lib.downloads.artifact.url, jarPath, jarFile);
 				}
 			}
@@ -153,9 +157,9 @@ export class Instance {
 		console.log("Downloading Library: " + file);
 		return new Promise<boolean>((resolve, reject) => {
 			https.get(url, (res) => {
-				fs.mkdirSync(__dirname + "/../../../../Storage/libraries/" + path, { recursive: true });
-				const dlpath = __dirname + "/../../../../Storage/libraries/" + path + "/" + file;
-				const filePath = fs.createWriteStream(dlpath);
+				mkdirSync(app.getAppPath() + "/Storage/libraries/" + path, { recursive: true });
+				const dlpath = app.getAppPath() + "/Storage/libraries/" + path + "/" + file;
+				const filePath = createWriteStream(dlpath);
 				res.pipe(filePath);
 				filePath.on("finish", () => {
 					filePath.close();
@@ -286,9 +290,9 @@ export class Instance {
 	async download_client(): Promise<void> {
 		return new Promise<void>((resolve, reject) => {
 			https.get(this.version_json.downloads.client.url, (res) => {
-				fs.mkdirSync(__dirname + "/../../../../Storage/versions/" + this.version, { recursive: true });
-				const path = __dirname + "/../../../../Storage/versions/" + this.version + "/" + this.version + ".jar";
-				const filePath = fs.createWriteStream(path);
+				mkdirSync(app.getAppPath() + "/Storage/versions/" + this.version, { recursive: true });
+				const path = app.getAppPath() + "/Storage/versions/" + this.version + "/" + this.version + ".jar";
+				const filePath = createWriteStream(path);
 				res.pipe(filePath);
 				filePath.on("finish", () => {
 					filePath.close();
@@ -300,14 +304,14 @@ export class Instance {
 	}
 
 	get_classpath(): string {
-		let base = path.resolve(__dirname + "/../../../../Storage/libraries/");
+		let base = path.resolve(app.getAppPath() + "/Storage/libraries/");
 		let classpath = "";
 
 		this.libraries.forEach((lib: any) => {
 			classpath += path.join(base, lib.path, lib.file) + ";";
 		});
 
-		classpath += path.resolve(__dirname + "/../../../../Storage/versions/" + this.version + "/" + this.version + ".jar");
+		classpath += path.resolve(app.getAppPath() + "/Storage/versions/" + this.version + "/" + this.version + ".jar");
 
 		return classpath;
 	}

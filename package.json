@@ -9,6 +9,7 @@
 		"package": "electron-forge package",
 		"make": "electron-forge make",
 		"make-mac": "electron-forge make --platform darwin",
+		"make-linux": "electron-forge make --platform linux --target deb",
 		"publish": "electron-forge publish",
 		"lint": "eslint --ext .ts,.tsx ."
 	},

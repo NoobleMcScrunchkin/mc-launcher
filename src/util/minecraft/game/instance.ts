@@ -1,16 +1,29 @@
-import { readFileSync, mkdirSync, createWriteStream, existsSync } from "fs";
+import { readFileSync, mkdirSync, createWriteStream, existsSync, createReadStream } from "fs";
 import fetch from "node-fetch";
 import https from "https";
 import path from "path";
 import { app } from "electron";
 import { v4 } from "uuid";
+import unzipper from "unzipper";
+
+function get_platform() {
+	let platform = process.platform;
+	if (platform == "win32") {
+		return "windows";
+	} else if (platform == "darwin") {
+		return "osx";
+	} else if (platform == "linux") {
+		return "linux";
+	}
+}
 
 export class Instance {
+	name: string = "";
 	uuid: string = "00000000-0000-0000-0000-000000000000";
 	type: string = "";
 	version: string = "";
 	mc_dir: string = "";
-	natives_dir: string = ".";
+	natives_dir: string = "";
 	libraries: Array<String> = [];
 	asset_index: string = "";
 	assets_dir: string = "";
@@ -21,15 +34,17 @@ export class Instance {
 	mc_args: string = "";
 	version_type: string = "release";
 
-	constructor(type: "vanilla" | "fabric" | "forge", version: string) {
+	constructor(name: string, type: "vanilla" | "fabric" | "forge", version: string) {
+		this.name = name;
 		this.uuid = v4();
 		this.type = type;
 		this.version = version;
-		this.mc_dir = path.resolve(app.getAppPath() + "/Storage/instances/" + this.uuid);
+		this.mc_dir = path.resolve(process.resourcesPath + "/Storage/instances/" + this.uuid);
+		this.natives_dir = this.mc_dir + "/natives";
 	}
 
-	static async create(type: "vanilla" | "fabric" | "forge", version: string): Promise<Instance> {
-		let instance = new Instance(type, version);
+	static async create(name: string, type: "vanilla" | "fabric" | "forge", version: string): Promise<Instance> {
+		let instance = new Instance(name, type, version);
 		await instance.download_version_info();
 		await instance.init_data();
 		return instance;
@@ -37,14 +52,18 @@ export class Instance {
 
 	async download_version_info() {
 		console.log("Downloading version information");
-		let manifest = JSON.parse(readFileSync(app.getAppPath() + "/Storage/version_manifest_v2.json").toString());
+		let manifest = JSON.parse(readFileSync(process.resourcesPath + "/Storage/version_manifest_v2.json").toString());
 		let version = manifest.versions.find((v: any) => v.id == this.version);
 		if (version) {
 			let res = await fetch(version.url);
 			let versionJson = await res.json();
 			this.version_json = versionJson;
 			this.asset_index = this.version_json.assetIndex.id;
-			this.java_version = this.version_json.javaVersion.majorVersion;
+			if (this.version_json.javaVersion) {
+				this.java_version = this.version_json.javaVersion.majorVersion;
+			} else {
+				this.java_version = 17;
+			}
 			this.main_class = this.version_json.mainClass;
 			this.version_type = this.version_json.type;
 
@@ -74,7 +93,7 @@ export class Instance {
 	async download_assets() {
 		console.log("Downloading Assets");
 
-		let assets_dir = app.getAppPath() + "/Storage/assets/";
+		let assets_dir = process.resourcesPath + "/Storage/assets/";
 		this.assets_dir = path.resolve(assets_dir);
 
 		let assetIndex = await this.download_asset_index(this.version_json.assetIndex.id, this.version_json.assetIndex.url, assets_dir + "indexes/");
@@ -112,7 +131,7 @@ export class Instance {
 	async init_data() {
 		console.log("Init Data");
 		if (this.version_json.downloads && this.version_json.downloads.client && this.version_json.downloads.client.url) {
-			if (!existsSync(app.getAppPath() + "/Storage/versions/" + this.version + "/" + this.version + ".jar")) {
+			if (!existsSync(process.resourcesPath + "/Storage/versions/" + this.version + "/" + this.version + ".jar")) {
 				await this.download_client();
 			}
 		}
@@ -128,37 +147,83 @@ export class Instance {
 				let jarPath = path.join(...libDomain.split("."), libName, libVersion);
 
 				if (libNative == undefined) {
-					let native = this.getNativesString(lib);
-					jarFile = libName + "-" + libVersion + ".jar";
+					if (lib.downloads && lib.downloads.artifact && lib.downloads.artifact.url) {
+						jarFile = libName + "-" + libVersion + ".jar";
 
-					if (native != "") {
-						jarFile = libName + "-" + libVersion + "-" + native + ".jar";
+						let library: any = {
+							name: lib.name,
+							path: jarPath,
+							file: jarFile,
+						};
+
+						this.libraries.push(library);
+
+						if (!existsSync(process.resourcesPath + "/Storage/libraries/" + jarPath + "/" + jarFile)) {
+							await this.download_library(lib.downloads.artifact.url, jarPath, jarFile);
+						}
+					}
+
+					let native_url = "";
+					if (lib.natives && lib.natives[get_platform()]) {
+						jarFile = libName + "-" + libVersion + "-natives-" + get_platform() + ".jar";
+						if (!lib.downloads.classifiers || !lib.downloads.classifiers["natives-" + get_platform()]) {
+							continue;
+						}
+
+						native_url = lib.downloads.classifiers["natives-" + get_platform()].url;
+
+						let native_lib: any = {
+							name: lib.name,
+							path: jarPath,
+							file: jarFile,
+						};
+
+						this.libraries.push(native_lib);
+
+						if (!existsSync(process.resourcesPath + "/Storage/libraries/" + jarPath + "/" + jarFile)) {
+							await this.download_library(native_url, jarPath, jarFile);
+						}
+
+						if (lib.extract) {
+							await this.extract_natives(process.resourcesPath + "/Storage/libraries/" + jarPath, jarFile);
+						}
 					}
 				} else {
 					jarFile = libName + "-" + libVersion + "-" + libNative + ".jar";
-				}
 
-				let library: any = {
-					name: lib.name,
-					path: jarPath,
-					file: jarFile,
-				};
+					let library: any = {
+						name: lib.name,
+						path: jarPath,
+						file: jarFile,
+					};
 
-				this.libraries.push(library);
+					this.libraries.push(library);
 
-				if (!existsSync(app.getAppPath() + "/Storage/libraries/" + jarPath + "/" + jarFile)) {
-					await this.download_library(lib.downloads.artifact.url, jarPath, jarFile);
+					if (!existsSync(process.resourcesPath + "/Storage/libraries/" + jarPath + "/" + jarFile)) {
+						await this.download_library(lib.downloads.artifact.url, jarPath, jarFile);
+					}
+
+					if (lib.extract) {
+						await this.extract_natives(process.resourcesPath + "/Storage/libraries/" + jarPath, jarFile);
+					}
 				}
 			}
 		}
+	}
+
+	extract_natives(jarPath: string, jarFile: string) {
+		console.log("Extracting Natives: " + jarFile);
+		console.log(this.natives_dir);
+		mkdirSync(this.natives_dir, { recursive: true });
+		createReadStream(jarPath + "/" + jarFile).pipe(unzipper.Extract({ path: this.natives_dir }));
 	}
 
 	download_library(url: string, path: string, file: string): Promise<boolean> {
 		console.log("Downloading Library: " + file);
 		return new Promise<boolean>((resolve, reject) => {
 			https.get(url, (res) => {
-				mkdirSync(app.getAppPath() + "/Storage/libraries/" + path, { recursive: true });
-				const dlpath = app.getAppPath() + "/Storage/libraries/" + path + "/" + file;
+				mkdirSync(process.resourcesPath + "/Storage/libraries/" + path, { recursive: true });
+				const dlpath = process.resourcesPath + "/Storage/libraries/" + path + "/" + file;
 				const filePath = createWriteStream(dlpath);
 				res.pipe(filePath);
 				filePath.on("finish", () => {
@@ -168,69 +233,6 @@ export class Instance {
 				});
 			});
 		});
-	}
-
-	getNativesString(library: any) {
-		let arch;
-
-		if (process.arch == "x64") {
-			arch = "64";
-		} else if (process.arch.toString() == "x32") {
-			arch = "32";
-		} else {
-			console.error("Unsupported platform");
-			process.exit(0);
-		}
-
-		let nativesStr = "";
-		let usingNatives = false;
-		let osrule: any;
-
-		if (library.rules) {
-			library.rules.forEach((rule: any) => {
-				if (rule.action == "allow") {
-					if (rule.os) {
-						usingNatives = true;
-						osrule = rule;
-					}
-				}
-			});
-		}
-
-		if (!usingNatives) {
-			return nativesStr;
-		}
-
-		let process_opsys = process.platform.toString();
-		let opsys: String = "";
-
-		if (process_opsys == "darwin") {
-			opsys = "MacOS";
-		} else if (process_opsys == "win32" || process_opsys == "win64") {
-			opsys = "Windows";
-		} else if (process_opsys == "linux") {
-			opsys = "Linux";
-		}
-
-		if (library["natives"]) {
-			if ("windows" in library["natives"] && opsys == "Windows") {
-				nativesStr = library["natives"]["windows"].replace("${arch}", arch);
-			} else if ("osx" in library["natives"] && opsys == "MacOS") {
-				nativesStr = library["natives"]["osx"].replace("${arch}", arch);
-			} else if ("linux" in library["natives"] && opsys == "Linux") {
-				nativesStr = library["natives"]["linux"].replace("${arch}", arch);
-			} else {
-				console.error("Unsupported platform");
-				process.exit(0);
-			}
-		} else if (osrule) {
-			nativesStr = osrule.os.name;
-			if (arch != "64") {
-				nativesStr += "-" + osrule.os.arch;
-			}
-		}
-
-		return nativesStr;
 	}
 
 	useLibrary(lib: any) {
@@ -290,8 +292,8 @@ export class Instance {
 	async download_client(): Promise<void> {
 		return new Promise<void>((resolve, reject) => {
 			https.get(this.version_json.downloads.client.url, (res) => {
-				mkdirSync(app.getAppPath() + "/Storage/versions/" + this.version, { recursive: true });
-				const path = app.getAppPath() + "/Storage/versions/" + this.version + "/" + this.version + ".jar";
+				mkdirSync(process.resourcesPath + "/Storage/versions/" + this.version, { recursive: true });
+				const path = process.resourcesPath + "/Storage/versions/" + this.version + "/" + this.version + ".jar";
 				const filePath = createWriteStream(path);
 				res.pipe(filePath);
 				filePath.on("finish", () => {
@@ -304,14 +306,14 @@ export class Instance {
 	}
 
 	get_classpath(): string {
-		let base = path.resolve(app.getAppPath() + "/Storage/libraries/");
+		let base = path.resolve(process.resourcesPath + "/Storage/libraries/");
 		let classpath = "";
 
 		this.libraries.forEach((lib: any) => {
 			classpath += path.join(base, lib.path, lib.file) + ";";
 		});
 
-		classpath += path.resolve(app.getAppPath() + "/Storage/versions/" + this.version + "/" + this.version + ".jar");
+		classpath += path.resolve(process.resourcesPath + "/Storage/versions/" + this.version + "/" + this.version + ".jar");
 
 		return classpath;
 	}

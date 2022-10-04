@@ -1,4 +1,3 @@
-import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
 import https from "https";
@@ -10,13 +9,9 @@ import { startGame } from "./util/minecraft/game/launcher";
 InstanceManager.loadInstances();
 
 const rootCas = require("ssl-root-cas").create();
-rootCas.addFile(path.resolve(__dirname, `${app.getAppPath()}/Storage/intermediate.pem`));
+rootCas.addFile(path.resolve(__dirname, `${process.resourcesPath}/intermediate.pem`));
 const httpsAgent = new https.Agent({ ca: rootCas });
 https.globalAgent.options.ca = rootCas;
-
-dotenv.config({
-	path: path.resolve(__dirname, `${app.getAppPath()}/Storage/.env`),
-});
 
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
@@ -25,26 +20,10 @@ if (require("electron-squirrel-startup")) {
 	app.quit();
 }
 
-function update_versions(): Promise<void> {
-	return new Promise((resolve, reject) => {
-		https.get("https://piston-meta.mojang.com/mc/game/version_manifest_v2.json", (res) => {
-			fs.mkdirSync(`${app.getAppPath()}/Storage/`, { recursive: true });
-			const path = `${app.getAppPath()}/Storage/version_manifest_v2.json`;
-			const filePath = fs.createWriteStream(path);
-			res.pipe(filePath);
-			filePath.on("finish", () => {
-				filePath.close();
-				console.log("Download Completed");
-				resolve();
-			});
-		});
-	});
-}
-
 let mainWindow: BrowserWindow | null;
 
-const createWindow = async (): Promise<void> => {
-	await update_versions();
+async function createWindow(): Promise<void> {
+	await InstanceManager.update_versions();
 
 	mainWindow = new BrowserWindow({
 		height: 600,
@@ -59,7 +38,7 @@ const createWindow = async (): Promise<void> => {
 	mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
 
 	mainWindow.webContents.openDevTools();
-};
+}
 
 app.on("ready", createWindow);
 
@@ -75,9 +54,14 @@ app.on("activate", () => {
 	}
 });
 
+ipcMain.on("CREATE_INSTANCE", async (event, arg) => {
+	let instance = InstanceManager.createInstance(arg.name, arg.type, arg.version);
+	let instances = InstanceManager.getInstances();
+	event.sender.send("GET_INSTANCES", { instances });
+});
+
 ipcMain.on("GET_INSTANCES", async (event, arg) => {
 	let instances = InstanceManager.getInstances();
-	console.log(instances);
 	event.sender.send("GET_INSTANCES", { instances });
 });
 

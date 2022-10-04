@@ -1,21 +1,38 @@
 import { Instance } from "./instance";
-import { app } from "electron";
-import { existsSync, readFileSync, mkdirSync, writeFileSync } from "fs";
+import https from "https";
+import { existsSync, readFileSync, mkdirSync, writeFileSync, createWriteStream } from "fs";
 
 export class InstanceManager {
 	static instances: Array<Instance> = [];
-	static instances_path: string = app.getAppPath() + "/Storage/instances/";
+	static instances_path: string = process.resourcesPath + "/Storage/instances/";
 	static json_path: string = this.instances_path + "/instances.json";
+
+	static update_versions(): Promise<void> {
+		return new Promise((resolve, reject) => {
+			https.get("https://piston-meta.mojang.com/mc/game/version_manifest_v2.json", (res) => {
+				mkdirSync(`${process.resourcesPath}/Storage/`, { recursive: true });
+				const path = `${process.resourcesPath}/Storage/version_manifest_v2.json`;
+				const filePath = createWriteStream(path);
+				res.pipe(filePath);
+				filePath.on("finish", () => {
+					filePath.close();
+					console.log("Download Completed");
+					resolve();
+				});
+			});
+		});
+	}
 
 	static loadInstances() {
 		if (existsSync(this.json_path)) {
 			let json = JSON.parse(readFileSync(this.json_path).toString());
 			json.forEach((instance: any) => {
-				this.instances.push(Object.setPrototypeOf(instance, Instance.prototype));
+				if (!this.instances.find((i) => i.uuid == instance.uuid)) {
+					this.instances.push(Object.setPrototypeOf(instance, Instance.prototype));
+				}
 			});
-		} else {
-			this.saveInstances();
 		}
+		this.saveInstances();
 	}
 
 	static saveInstances() {
@@ -24,8 +41,8 @@ export class InstanceManager {
 		writeFileSync(this.json_path, json);
 	}
 
-	static async createInstance(type: "vanilla" | "fabric" | "forge", version: string): Promise<Instance> {
-		let instance = await Instance.create(type, version);
+	static async createInstance(name: string, type: "vanilla" | "fabric" | "forge", version: string): Promise<Instance> {
+		let instance = await Instance.create(name, type, version);
 		this.addInstance(instance);
 		return instance;
 	}
@@ -51,7 +68,14 @@ export class InstanceManager {
 		return this.instances.find((i) => i.uuid == uuid);
 	}
 
-	static getInstances(): Array<Instance> {
-		return this.instances;
+	static getInstances(): Array<any> {
+		return this.instances.map((i) => {
+			return {
+				name: i.name,
+				uuid: i.uuid,
+				type: i.type,
+				version: i.version,
+			};
+		});
 	}
 }

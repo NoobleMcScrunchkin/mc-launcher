@@ -29,10 +29,21 @@ export function startGame(instance: Instance, user: User, window: BrowserWindow)
 		user.mc_token.access_token,
 		"--versionType",
 		"release",
+		"--userProperties",
+		"{}",
 		instance.mc_args,
 	];
 
-	const javaRuntime = exec(processCall.join(" "));
+	const javaRuntime = exec(processCall.join(" "), (error, stdout, stderr) => {
+		if (error) {
+			console.log(`error: ${error.message}`);
+			return;
+		}
+		if (stderr) {
+			console.log(`stderr: ${stderr}`);
+			return;
+		}
+	});
 
 	javaRuntime.stdout.on("data", function (msg) {
 		process.stdout.write(msg);

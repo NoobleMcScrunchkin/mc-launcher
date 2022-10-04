@@ -31,7 +31,7 @@ async function show_microsoft_login(): Promise<String> {
 			height: 600,
 		});
 
-		win.loadURL("https://login.live.com/oauth20_authorize.srf?client_id=" + process.env.CLIENT_ID + "&response_type=code&redirect_uri=" + process.env.REDIRECT_URI + "&scope=XboxLive.signin%20offline_access&state=NOT_NEEDED");
+		win.loadURL("https://login.live.com/oauth20_authorize.srf?client_id=a68214e1-52ba-4903-8f03-87e5f2a22b74&response_type=code&redirect_uri=https://aslett.io:2048/microsoft/callback&scope=XboxLive.signin%20offline_access&state=NOT_NEEDED");
 
 		win.webContents.on("did-navigate", async (event, url) => {
 			try {
@@ -54,7 +54,7 @@ async function show_microsoft_login(): Promise<String> {
 
 function get_microsoft_token(code: String): Promise<any> {
 	return new Promise<any>(async (resolve, reject) => {
-		let res = await fetch(process.env.TOKEN_URI + "?code=" + code);
+		let res = await fetch("https://aslett.io:2048/microsoft/token?code=" + code);
 		if (res.status != 200) {
 			reject("Failed to get Microsoft token");
 			return;

@@ -36,11 +36,16 @@
 				},
 				{
 					"name": "@electron-forge/maker-zip",
-					"platforms": []
+					"platforms": [
+						"darwin"
+					]
 				},
 				{
 					"name": "@electron-forge/maker-deb",
-					"config": {}
+					"config": {},
+					"platforms": [
+						"linux"
+					]
 				},
 				{
 					"name": "@electron-forge/maker-rpm",
@@ -56,13 +61,14 @@
 					"@electron-forge/plugin-webpack",
 					{
 						"mainConfig": "./webpack.main.config.js",
+						"devContentSecurityPolicy": "connect-src 'self' https://api.myapp.com 'unsafe-eval'",
 						"renderer": {
 							"config": "./webpack.renderer.config.js",
 							"entryPoints": [
 								{
 									"html": "./src/index.html",
 									"js": "./src/renderer.ts",
-									"name": "main_window"
+									"name": "dashboard"
 								}
 							]
 						}
@@ -88,7 +94,6 @@
 		"@vercel/webpack-asset-relocator-loader": "^1.7.3",
 		"css-loader": "^6.7.1",
 		"electron": "21.0.1",
-		"electron-prebuilt-compile": "8.2.0",
 		"eslint": "^8.24.0",
 		"eslint-plugin-import": "^2.26.0",
 		"fork-ts-checker-webpack-plugin": "^7.2.13",

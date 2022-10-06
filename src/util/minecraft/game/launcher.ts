@@ -1,11 +1,13 @@
 import { exec } from "child_process";
 import { Instance } from "./instance";
 import { User } from "../auth/user";
-import { BrowserWindow } from "electron";
+import { UserManager } from "../auth/userManager";
+import { Browser } from "../../electron/browser";
 
-export function startGame(instance: Instance, user: User, window: BrowserWindow): void {
+export function startGame(instance: Instance): void {
+	let user: User = UserManager.currentUser;
+
 	let processCall = [
-		"java",
 		instance.java_args,
 		`-Djava.library.path=${instance.natives_dir}`,
 		"-Dminecraft.launcher.brand=custom-launcher",
@@ -34,7 +36,13 @@ export function startGame(instance: Instance, user: User, window: BrowserWindow)
 		instance.mc_args,
 	];
 
-	const javaRuntime = exec(processCall.join(" "), (error, stdout, stderr) => {
+	processCall.forEach((arg: string, index: number) => {
+		processCall[index] = "'" + arg + "'";
+	});
+
+	// console.log("& java " + processCall.join(" "));
+
+	const javaRuntime = exec("& java " + processCall.join(" "), { shell: process.platform == "win32" ? "powershell" : undefined, cwd: instance.mc_dir }, (error, stdout, stderr) => {
 		if (error) {
 			console.log(`error: ${error.message}`);
 			return;
@@ -47,6 +55,6 @@ export function startGame(instance: Instance, user: User, window: BrowserWindow)
 
 	javaRuntime.stdout.on("data", function (msg) {
 		process.stdout.write(msg);
-		window.webContents.executeJavaScript(`console.log("${msg.replace(/(\r\n|\n|\r)/gm, "")}")`);
+		Browser.mainWindow.webContents.executeJavaScript(`console.log("${msg.replace(/(\r\n|\n|\r)/gm, "")}")`);
 	});
 }

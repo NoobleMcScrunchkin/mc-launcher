@@ -9,12 +9,6 @@ export function InstanceIcon(props: any) {
 		ipcRenderer.send("START_INSTANCE", { uuid: instance.uuid });
 	};
 
-	React.useEffect(() => {
-		return () => {
-			ipcRenderer.removeAllListeners("START_INSTANCE");
-		};
-	}, []);
-
 	return (
 		<>
 			<div className="instance-icon">

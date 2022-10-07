@@ -5,6 +5,7 @@ import path from "path";
 import { app } from "electron";
 import { v4 } from "uuid";
 import unzipper from "unzipper";
+import { Storage } from "../../storage";
 
 function get_platform() {
 	let platform = process.platform;
@@ -39,7 +40,7 @@ export class Instance {
 		this.uuid = v4();
 		this.type = type;
 		this.version = version;
-		this.mc_dir = path.resolve(process.resourcesPath + "/Storage/instances/" + this.uuid);
+		this.mc_dir = path.resolve(Storage.resourcesPath + "/Storage/instances/" + this.uuid);
 		this.natives_dir = this.mc_dir + "/natives";
 	}
 
@@ -50,9 +51,9 @@ export class Instance {
 		return instance;
 	}
 
-	async download_version_info() {
+	async download_version_info(): Promise<void> {
 		console.log("Downloading version information");
-		let manifest = JSON.parse(readFileSync(process.resourcesPath + "/Storage/version_manifest_v2.json").toString());
+		let manifest = JSON.parse(readFileSync(Storage.resourcesPath + "/Storage/version_manifest_v2.json").toString());
 		let version = manifest.versions.find((v: any) => v.id == this.version);
 		if (version) {
 			let res = await fetch(version.url);
@@ -90,10 +91,10 @@ export class Instance {
 		});
 	}
 
-	async download_assets() {
+	async download_assets(): Promise<void> {
 		console.log("Downloading Assets");
 
-		let assets_dir = process.resourcesPath + "/Storage/assets/";
+		let assets_dir = Storage.resourcesPath + "/Storage/assets/";
 		this.assets_dir = path.resolve(assets_dir);
 
 		let assetIndex = await this.download_asset_index(this.version_json.assetIndex.id, this.version_json.assetIndex.url, assets_dir + "indexes/");
@@ -128,10 +129,10 @@ export class Instance {
 		});
 	}
 
-	async init_data() {
+	async init_data(): Promise<void> {
 		console.log("Init Data");
 		if (this.version_json.downloads && this.version_json.downloads.client && this.version_json.downloads.client.url) {
-			if (!existsSync(process.resourcesPath + "/Storage/versions/" + this.version + "/" + this.version + ".jar")) {
+			if (!existsSync(Storage.resourcesPath + "/Storage/versions/" + this.version + "/" + this.version + ".jar")) {
 				await this.download_client();
 			}
 		}
@@ -158,7 +159,7 @@ export class Instance {
 
 						this.libraries.push(library);
 
-						if (!existsSync(process.resourcesPath + "/Storage/libraries/" + jarPath + "/" + jarFile)) {
+						if (!existsSync(Storage.resourcesPath + "/Storage/libraries/" + jarPath + "/" + jarFile)) {
 							await this.download_library(lib.downloads.artifact.url, jarPath, jarFile);
 						}
 					}
@@ -180,12 +181,12 @@ export class Instance {
 
 						this.libraries.push(native_lib);
 
-						if (!existsSync(process.resourcesPath + "/Storage/libraries/" + jarPath + "/" + jarFile)) {
+						if (!existsSync(Storage.resourcesPath + "/Storage/libraries/" + jarPath + "/" + jarFile)) {
 							await this.download_library(native_url, jarPath, jarFile);
 						}
 
 						if (lib.extract) {
-							await this.extract_natives(process.resourcesPath + "/Storage/libraries/" + jarPath, jarFile);
+							await this.extract_natives(Storage.resourcesPath + "/Storage/libraries/" + jarPath, jarFile);
 						}
 					}
 				} else {
@@ -199,19 +200,19 @@ export class Instance {
 
 					this.libraries.push(library);
 
-					if (!existsSync(process.resourcesPath + "/Storage/libraries/" + jarPath + "/" + jarFile)) {
+					if (!existsSync(Storage.resourcesPath + "/Storage/libraries/" + jarPath + "/" + jarFile)) {
 						await this.download_library(lib.downloads.artifact.url, jarPath, jarFile);
 					}
 
 					if (lib.extract) {
-						await this.extract_natives(process.resourcesPath + "/Storage/libraries/" + jarPath, jarFile);
+						await this.extract_natives(Storage.resourcesPath + "/Storage/libraries/" + jarPath, jarFile);
 					}
 				}
 			}
 		}
 	}
 
-	extract_natives(jarPath: string, jarFile: string) {
+	extract_natives(jarPath: string, jarFile: string): void {
 		console.log("Extracting Natives: " + jarFile);
 		console.log(this.natives_dir);
 		mkdirSync(this.natives_dir, { recursive: true });
@@ -222,8 +223,8 @@ export class Instance {
 		console.log("Downloading Library: " + file);
 		return new Promise<boolean>((resolve, reject) => {
 			https.get(url, (res) => {
-				mkdirSync(process.resourcesPath + "/Storage/libraries/" + path, { recursive: true });
-				const dlpath = process.resourcesPath + "/Storage/libraries/" + path + "/" + file;
+				mkdirSync(Storage.resourcesPath + "/Storage/libraries/" + path, { recursive: true });
+				const dlpath = Storage.resourcesPath + "/Storage/libraries/" + path + "/" + file;
 				const filePath = createWriteStream(dlpath);
 				res.pipe(filePath);
 				filePath.on("finish", () => {
@@ -235,7 +236,7 @@ export class Instance {
 		});
 	}
 
-	useLibrary(lib: any) {
+	useLibrary(lib: any): boolean {
 		if (!("rules" in lib)) {
 			return true;
 		}
@@ -248,7 +249,7 @@ export class Instance {
 		return false;
 	}
 
-	ruleAllows(rule: any) {
+	ruleAllows(rule: any): boolean {
 		let useLib;
 
 		if (rule["action"] == "allow") {
@@ -292,8 +293,8 @@ export class Instance {
 	async download_client(): Promise<void> {
 		return new Promise<void>((resolve, reject) => {
 			https.get(this.version_json.downloads.client.url, (res) => {
-				mkdirSync(process.resourcesPath + "/Storage/versions/" + this.version, { recursive: true });
-				const path = process.resourcesPath + "/Storage/versions/" + this.version + "/" + this.version + ".jar";
+				mkdirSync(Storage.resourcesPath + "/Storage/versions/" + this.version, { recursive: true });
+				const path = Storage.resourcesPath + "/Storage/versions/" + this.version + "/" + this.version + ".jar";
 				const filePath = createWriteStream(path);
 				res.pipe(filePath);
 				filePath.on("finish", () => {
@@ -306,14 +307,14 @@ export class Instance {
 	}
 
 	get_classpath(): string {
-		let base = path.resolve(process.resourcesPath + "/Storage/libraries/");
+		let base = path.resolve(Storage.resourcesPath + "/Storage/libraries/");
 		let classpath = "";
 
 		this.libraries.forEach((lib: any) => {
-			classpath += path.join(base, lib.path, lib.file) + ";";
+			classpath += path.join(base, lib.path, lib.file) + (process.platform == "win32" ? ";" : ":");
 		});
 
-		classpath += path.resolve(process.resourcesPath + "/Storage/versions/" + this.version + "/" + this.version + ".jar");
+		classpath += path.resolve(Storage.resourcesPath + "/Storage/versions/" + this.version + "/" + this.version + ".jar");
 
 		return classpath;
 	}

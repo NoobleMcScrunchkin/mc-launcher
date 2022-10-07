@@ -1,6 +1,6 @@
 import * as React from "react";
-import { CloseBtn } from "./components/CloseBtn";
-import { Btn } from "./components/Btn";
+import { CloseBtn } from "./Components/CloseBtn";
+import { Btn } from "./Components/Btn";
 import { useNavigate } from "react-router-dom";
 const { ipcRenderer } = window.require("electron");
 

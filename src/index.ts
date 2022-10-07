@@ -9,10 +9,10 @@ rootCas.addFile(path.resolve(__dirname, `${process.resourcesPath}/intermediate.p
 const httpsAgent = new https.Agent({ ca: rootCas });
 https.globalAgent.options.ca = rootCas;
 
-(async () => {
+(async (): Promise<void> => {
 	await InstanceManager.update_versions();
-	await UserManager.login();
 })();
 
 InstanceManager.loadInstances();
+UserManager.loadUsers();
 Browser.init();

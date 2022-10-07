@@ -3,9 +3,12 @@ import { Instance } from "./instance";
 import { User } from "../auth/user";
 import { UserManager } from "../auth/userManager";
 import { Browser } from "../../electron/browser";
+import { mkdirSync } from "fs";
 
 export function startGame(instance: Instance): void {
 	let user: User = UserManager.currentUser;
+
+	mkdirSync(instance.mc_dir, { recursive: true });
 
 	let processCall = [
 		instance.java_args,
@@ -36,13 +39,13 @@ export function startGame(instance: Instance): void {
 		instance.mc_args,
 	];
 
-	processCall.forEach((arg: string, index: number) => {
-		processCall[index] = "'" + arg + "'";
-	});
+	if (process.platform == "win32") {
+		processCall.forEach((arg: string, index: number) => {
+			processCall[index] = "'" + arg + "'";
+		});
+	}
 
-	// console.log("& java " + processCall.join(" "));
-
-	const javaRuntime = exec("& java " + processCall.join(" "), { shell: process.platform == "win32" ? "powershell" : undefined, cwd: instance.mc_dir }, (error, stdout, stderr) => {
+	const javaRuntime = exec(`${process.platform == "win32" ? "&" : ""}java ${processCall.join(" ")}`, { shell: process.platform == "win32" ? "powershell" : undefined, cwd: instance.mc_dir }, (error, stdout, stderr) => {
 		if (error) {
 			console.log(`error: ${error.message}`);
 			return;

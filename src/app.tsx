@@ -4,6 +4,7 @@ import { createBrowserRouter, RouterProvider, createRoutesFromElements, Routes, 
 import { Root } from "./react/Root";
 import { Dashboard } from "./react/Dashboard";
 import { InstanceCreator } from "./react/InstanceCreator";
+import { Users } from "./react/Users";
 
 import "./css/main.css";
 
@@ -15,6 +16,7 @@ root.render(
 				<Route path="/" element={<Root />}>
 					<Route path="" element={<Dashboard />}></Route>
 					<Route path="instanceCreator" element={<InstanceCreator />}></Route>
+					<Route path="users" element={<Users />}></Route>
 				</Route>
 			</Routes>
 		</HashRouter>

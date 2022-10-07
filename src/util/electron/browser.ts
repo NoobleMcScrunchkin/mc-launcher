@@ -7,8 +7,8 @@ declare const DASHBOARD_PRELOAD_WEBPACK_ENTRY: string;
 export class Browser {
 	static mainWindow: BrowserWindow | null = null;
 
-	static createWindow() {
-		session.defaultSession.loadExtension("C:\\Users\\kiera\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Extensions\\fmkadmapgofadopljbjfkapdkoienihi\\4.25.0_0");
+	static createWindow(): void {
+		// session.defaultSession.loadExtension("C:\\Users\\kiera\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Extensions\\fmkadmapgofadopljbjfkapdkoienihi\\4.25.0_0");
 
 		Browser.mainWindow = new BrowserWindow({
 			height: 600,
@@ -27,7 +27,7 @@ export class Browser {
 		});
 	}
 
-	static init() {
+	static init(): void {
 		if (require("electron-squirrel-startup")) {
 			app.quit();
 		}

@@ -1,3 +1,3 @@
-export function displayError(errorMessage: String) {
+export function displayError(errorMessage: String): void {
 	console.log(errorMessage);
 }

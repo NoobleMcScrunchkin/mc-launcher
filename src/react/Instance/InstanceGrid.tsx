@@ -3,7 +3,7 @@ import { Instance } from "../../util/minecraft/game/instance";
 import { InstanceIcon } from "./InstanceIcon";
 const { ipcRenderer } = window.require("electron");
 
-export function InstanceGrid() {
+export function InstanceGrid(props: any) {
 	const [instances, setInstances] = React.useState([]);
 
 	const getInstances = () => {
@@ -24,7 +24,7 @@ export function InstanceGrid() {
 
 	return (
 		<>
-			<div className="instance-grid">
+			<div style={props.style} className="instance-grid">
 				{instances.map((instance: Instance) => {
 					return <InstanceIcon key={instance.uuid} instance={instance} />;
 				})}

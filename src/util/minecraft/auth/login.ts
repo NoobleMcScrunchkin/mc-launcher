@@ -35,7 +35,7 @@ async function show_microsoft_login(): Promise<String> {
 
 		win.webContents.on("did-navigate", async (event, url) => {
 			try {
-				if (url.includes("https://aslett.io:2048/microsoft/callback")) {
+				if (url.startsWith("https://aslett.io:2048/microsoft/callback")) {
 					win.hide();
 					if (url.includes("error=")) {
 						let error = url.split("error=")[1].split("&")[0];

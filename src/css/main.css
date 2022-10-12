@@ -280,10 +280,10 @@ a {
     opacity: 0.2;
 }
 
-.loading+.loading-container {
+.loading~.loading-container {
     opacity: 1;
 }
 
-.loading+.loading-container div {
+.loading~.loading-container div {
     animation-play-state: running;
 }

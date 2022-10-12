@@ -1,4 +1,5 @@
 import fetch from "node-fetch";
+import { token_update } from "./login";
 
 export class User {
 	ms_token: any = {};
@@ -25,6 +26,12 @@ export class User {
 		this.uuid = json.id;
 		this.skins = json.skins;
 		this.capes = json.capes;
+	}
+
+	async update_tokens() {
+		const { ms_token, mc_token } = await token_update(this.ms_token.refresh_token);
+		this.ms_token = ms_token;
+		this.mc_token = mc_token;
 	}
 
 	static async create(ms_token: any, mc_token: string): Promise<User> {

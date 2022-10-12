@@ -3,10 +3,6 @@ import electron from "electron";
 import fetch from "node-fetch";
 import { User } from "./user";
 
-export function login() {
-	displayError("Mojang login is not supported yet. Please use Microsoft login.");
-}
-
 export function microsoftLogin(): Promise<any> {
 	return new Promise(async (resolve, reject) => {
 		try {
@@ -17,6 +13,24 @@ export function microsoftLogin(): Promise<any> {
 			let mc_token = await get_minecraft_token(xsts.DisplayClaims.xui[0].uhs, xsts.Token);
 			let user = await User.create(token, mc_token);
 			resolve(user);
+		} catch (e: any) {
+			displayError(e.toString());
+			reject(e);
+		}
+	});
+}
+
+export function token_update(refresh_token: string): Promise<any> {
+	return new Promise<any>(async (resolve, reject) => {
+		try {
+			let token = await refresh_ms_token(refresh_token);
+			let xbox_live = await get_xbox_token(token.access_token);
+			let xsts = await get_xsts_token(xbox_live.Token);
+			let mc_token = await get_minecraft_token(xsts.DisplayClaims.xui[0].uhs, xsts.Token);
+			resolve({
+				ms_token: token,
+				mc_token: mc_token,
+			});
 		} catch (e: any) {
 			displayError(e.toString());
 			reject(e);
@@ -47,7 +61,9 @@ async function show_microsoft_login(): Promise<String> {
 					resolve(code);
 					win.close();
 				}
-			} catch (e) {}
+			} catch (e) {
+				reject(e);
+			}
 		});
 	});
 }
@@ -57,6 +73,18 @@ function get_microsoft_token(code: String): Promise<any> {
 		let res = await fetch("https://aslett.io:2048/microsoft/token?code=" + code);
 		if (res.status != 200) {
 			reject("Failed to get Microsoft token");
+			return;
+		}
+		let json = await res.json();
+		resolve(json);
+	});
+}
+
+function refresh_ms_token(refresh_token: string): Promise<any> {
+	return new Promise<any>(async (resolve, reject) => {
+		let res = await fetch("https://aslett.io:2048/microsoft/refresh?refresh_token=" + refresh_token);
+		if (res.status != 200) {
+			reject("Failed to refresh Microsoft token");
 			return;
 		}
 		let json = await res.json();

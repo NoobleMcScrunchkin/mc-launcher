@@ -17,7 +17,18 @@ ipcMain.on("GET_INSTANCES", async (event, arg): Promise<void> => {
 ipcMain.on("START_INSTANCE", async (event, arg): Promise<void> => {
 	InstanceManager.loadInstances();
 	let instance = InstanceManager.getInstance(arg.uuid);
-	startGame(instance);
+	if (!instance) {
+		return;
+	}
+	startGame(
+		instance,
+		() => {
+			event.sender.send("INSTANCE_STARTED", { uuid: instance.uuid });
+		},
+		(error) => {
+			event.sender.send("INSTANCE_START_ERROR", { uuid: instance.uuid, error });
+		}
+	);
 });
 
 ipcMain.on("ADD_USER", async (event, arg): Promise<void> => {

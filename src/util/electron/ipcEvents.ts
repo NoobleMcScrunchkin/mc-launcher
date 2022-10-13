@@ -2,6 +2,23 @@ import { ipcMain } from "electron";
 import { UserManager } from "../minecraft/auth/userManager";
 import { InstanceManager } from "../minecraft/game/instanceManager";
 import { startGame } from "../minecraft/game/launcher";
+import { Browser } from "./browser";
+
+ipcMain.on("MINIMIZE", (event, arg): void => {
+	Browser.mainWindow?.minimize();
+});
+
+ipcMain.on("MAXIMIZE", (event, arg): void => {
+	if (Browser.mainWindow?.isMaximized()) {
+		Browser.mainWindow?.unmaximize();
+	} else {
+		Browser.mainWindow?.maximize();
+	}
+});
+
+ipcMain.on("CLOSE", (event, arg): void => {
+	Browser.mainWindow?.close();
+});
 
 ipcMain.on("CREATE_INSTANCE", async (event, arg): Promise<void> => {
 	let instance = await InstanceManager.createInstance(arg.name, arg.type, arg.version);

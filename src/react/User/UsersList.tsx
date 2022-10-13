@@ -7,8 +7,10 @@ export function UsersList(props: any) {
 	const navigate = useNavigate();
 	const [users, setUsers] = React.useState<Array<User>>(null);
 
-	const setCurrentUser = (uuid: string) => {
-		ipcRenderer.send("SET_CURRENT_USER", { uuid });
+	const setCurrentUser = (event: any, uuid: string) => {
+		if (!event.target.className.includes("user-delete") && !event.target.parentElement.className.includes("user-delete")) {
+			ipcRenderer.send("SET_CURRENT_USER", { uuid });
+		}
 	};
 
 	const deleteUser = (uuid: string) => {
@@ -20,6 +22,7 @@ export function UsersList(props: any) {
 
 		ipcRenderer.addListener("GET_USERS", (event, arg) => {
 			setUsers(arg.users);
+			props.loading("");
 		});
 
 		ipcRenderer.addListener("SET_CURRENT_USER", (event, arg) => {
@@ -34,27 +37,26 @@ export function UsersList(props: any) {
 
 	return (
 		<>
-			<div style={props.style} className="users-list">
+			<div style={props.style} className={"users-list " + props.className}>
 				{users != null &&
 					users.length > 0 &&
 					users.map((user: User) => {
 						if (user != null) {
 							return (
-								<div key={user.uuid} className="user-item">
-									<div
-										className="user-name"
-										onClick={() => {
-											setCurrentUser(user.uuid);
-										}}>
-										{user.name}
-									</div>
+								<div
+									key={user.uuid}
+									className="user-item"
+									onClick={(e) => {
+										setCurrentUser(e, user.uuid);
+									}}>
+									<div className="user-name">{user.name}</div>
 									<div className="user-buttons">
 										<div
 											className="user-delete hover-text"
 											onClick={() => {
 												deleteUser(user.uuid);
 											}}>
-											X
+											<i className="fa-solid fa-xmark"></i>
 										</div>
 									</div>
 								</div>

@@ -7,6 +7,7 @@ import { InstanceCreator } from "./react/InstanceCreator";
 import { Users } from "./react/Users";
 
 import "./css/main.css";
+import "./fontawesome/css/all.css";
 
 const root = ReactDOM.createRoot(document.getElementById("react-root"));
 root.render(

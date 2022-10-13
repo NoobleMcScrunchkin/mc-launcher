@@ -1,5 +1,9 @@
 import * as React from "react";
 
 export function Footer(props: any) {
-    return <div id="footer">{props.children}</div>;
+	return (
+		<div id="footer" className={props.className}>
+			{props.children}
+		</div>
+	);
 }

@@ -8,9 +8,36 @@
 </head>
 
 <body>
-    <div id="react-root">
+    <div id="root">
+        <div id="title-bar">
+            <div id="title">
+                Custom Minecraft Launcher
+            </div>
+            <div id="title-bar-btns">
+                <div id="min-btn"><i class="fa-solid fa-angle-down"></i></div>
+                <div id="max-btn"><i class="fa-solid fa-angle-up"></i></div>
+                <div id="close-btn"><i class="fa-solid fa-xmark"></i></div>
+            </div>
+        </div>
+        <div id="react-root">
 
+        </div>
     </div>
+    <script>
+        const { ipcRenderer } = require('electron');
+
+        document.getElementById("min-btn").addEventListener("click", (e) => {
+            ipcRenderer.send("MINIMIZE");
+        });
+
+        document.getElementById("max-btn").addEventListener("click", (e) => {
+            ipcRenderer.send("MAXIMIZE");
+        });
+
+        document.getElementById("close-btn").addEventListener("click", (e) => {
+            ipcRenderer.send("CLOSE");
+        });
+    </script>
 </body>
 
 </html>

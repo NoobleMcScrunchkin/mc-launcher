@@ -18,6 +18,7 @@ export class Browser {
 				nodeIntegration: true,
 				contextIsolation: false,
 			},
+			frame: false,
 		});
 
 		Browser.mainWindow.loadURL(DASHBOARD_WEBPACK_ENTRY);

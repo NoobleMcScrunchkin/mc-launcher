@@ -35,8 +35,8 @@ export function InstanceIcon(props: any) {
 
 	return (
 		<>
-			<div className="instance-icon">
-				<div className={`instance-container hover-border hover-text ${loading}`} onClick={startGame}>
+			<div className={`instance-icon ${loading}`}>
+				<div className={`instance-container hover-border hover-text loading-dim`} onClick={startGame}>
 					<div className="instance-name">{instance.name}</div>
 				</div>
 				<LoadingIcon />

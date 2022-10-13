@@ -5,7 +5,9 @@ export function AddInstanceBtn(props: any) {
 	return (
 		<>
 			<Link to={"/instanceCreator"}>
-				<div className="add-btn hover-border hover-text">+</div>
+				<div className="add-btn hover-border hover-text">
+					<i className="fa-solid fa-plus"></i>
+				</div>
 			</Link>
 		</>
 	);

@@ -24,7 +24,7 @@ export function InstanceGrid(props: any) {
 
 	return (
 		<>
-			<div style={props.style} className="instance-grid">
+			<div style={props.style != undefined ? props.style : {}} className="instance-grid">
 				{instances.map((instance: Instance) => {
 					return <InstanceIcon key={instance.uuid} instance={instance} />;
 				})}

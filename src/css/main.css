@@ -83,11 +83,14 @@ a {
 }
 
 #react-root {
+    position: relative;
     width: 100%;
     flex-grow: 1;
+    overflow: auto;
 }
 
 #main-content {
+    position: relative;
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -113,21 +116,35 @@ a {
 }
 
 .hover-border {
-    transition: color 0.2s, border 0.2s;
+    transition: all 0.2s;
     border: 2px solid rgb(150, 150, 150);
 }
 
-.hover-border:hover {
+.hover-border:hover:not(.no-hover) {
     border: 2px solid white;
 }
 
 .hover-text {
-    transition: color 0.2s, border 0.2s;
+    transition: all 0.2s;
     color: rgb(150, 150, 150);
 }
 
-.hover-text:hover {
+.hover-text:hover:not(.no-hover) {
     color: white;
+}
+
+.hover-text-dim {
+    transition: all 0.2s;
+    color: rgb(150, 150, 150);
+}
+
+.hover-text-dim:hover:not(.no-hover) {
+    color: rgb(100, 100, 100);
+}
+
+.hover-text-blur:hover:not(.no-hover) {
+    color: transparent;
+    text-shadow: 0 0 2px rgba(100, 100, 100, 0.7);
 }
 
 .instance-grid {
@@ -197,12 +214,11 @@ a {
 
 .title {
     font-size: 2.5rem;
-    margin-bottom: 3rem;
-    margin-top: -2rem;
 }
 
+
 .input-group {
-    margin-bottom: 0.5rem;
+    margin-top: 0.5rem;
     width: 100%;
     max-width: 400px;
 }
@@ -332,4 +348,43 @@ a {
 
 .loading .loading-container div {
     animation-play-state: running;
+}
+
+.top-m-l {
+    margin-top: 3rem;
+}
+
+.play-icon-overlay {
+    opacity: 0;
+    transition: all 0.2s;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 3rem;
+    text-shadow: none;
+    color: #04c444;
+    text-shadow: 0px 0px 3rem #04c444;
+}
+
+.instance-container:hover:not(.no-hover)>.play-icon-overlay {
+    opacity: 1;
+}
+
+.loading .play-icon-overlay {
+    opacity: 0;
+}
+
+.context-menu {
+    position: fixed;
+    text-shadow: none;
+    color: white;
+    width: 10rem;
+    background-color: red;
+    z-index: 999;
+    cursor: auto;
+}
+
+.no-hover {
+    cursor: auto !important;
 }

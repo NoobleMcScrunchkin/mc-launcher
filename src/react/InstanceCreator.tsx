@@ -2,6 +2,8 @@ import * as React from "react";
 import { CloseBtn } from "./Components/CloseBtn";
 import { Btn } from "./Components/Btn";
 import { useNavigate } from "react-router-dom";
+import { Header } from "./Components/Header";
+import { Footer } from "./Components/Footer";
 const { ipcRenderer } = window.require("electron");
 
 export function InstanceCreator() {
@@ -29,11 +31,11 @@ export function InstanceCreator() {
 	};
 
 	return (
-		<>
+		<div id="main-content">
 			<CloseBtn />
 			<div className="instance-creator">
 				<div className="title">Create Instance</div>
-				<div className="input-group">
+				<div className="input-group top-m-l">
 					<label htmlFor="name">Name</label>
 					<input type="text" name="name" id="name" value={name} onChange={handleNameChange} />
 				</div>
@@ -50,6 +52,6 @@ export function InstanceCreator() {
 					Create
 				</Btn>
 			</div>
-		</>
+		</div>
 	);
 }

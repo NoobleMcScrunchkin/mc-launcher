@@ -37,7 +37,7 @@ export function UsersList(props: any) {
 
 	return (
 		<>
-			<div style={props.style} className={"users-list " + props.className}>
+			<div style={props.style != undefined ? props.style : {}} className={"users-list " + (props.className != undefined ? props.className : "")}>
 				{users != null &&
 					users.length > 0 &&
 					users.map((user: User) => {

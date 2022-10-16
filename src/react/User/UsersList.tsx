@@ -37,7 +37,7 @@ export function UsersList(props: any) {
 
 	return (
 		<>
-			<div style={props.style != undefined ? props.style : {}} className={"users-list " + (props.className != undefined ? props.className : "")}>
+			<div style={props.style != undefined ? props.style : {}} className={"users-list" + (props.className ? ` ${props.className}` : "")}>
 				{users != null &&
 					users.length > 0 &&
 					users.map((user: User) => {
@@ -49,6 +49,9 @@ export function UsersList(props: any) {
 									onClick={(e) => {
 										setCurrentUser(e, user.uuid);
 									}}>
+									<div className="user-head">
+										<img src={user && user.headImage ? user.headImage : ""} className="head-skin" style={{ display: user && user.headImage ? "block" : "none" }} />
+									</div>
 									<div className="user-name">{user.name}</div>
 									<div className="user-buttons">
 										<div

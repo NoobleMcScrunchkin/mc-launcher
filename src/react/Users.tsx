@@ -1,8 +1,8 @@
 import * as React from "react";
-import { CloseBtn } from "./Components/CloseBtn";
+import { CloseBtn } from "./Components/Buttons/CloseBtn";
 import { Header } from "./Components/Header";
 import { Footer } from "./Components/Footer";
-import { LoadingIcon } from "./Components/LoadingIcon";
+import { LoadingIcon } from "./Components/Overlays/LoadingIcon";
 import { UsersList } from "./User/UsersList";
 import { AddUserBtn } from "./User/AddUserBtn";
 

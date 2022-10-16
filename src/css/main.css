@@ -133,6 +133,15 @@ a {
     color: white;
 }
 
+.hover-text-red {
+    transition: all 0.2s;
+    color: rgb(175, 33, 33);
+}
+
+.hover-text-red:hover:not(.no-hover) {
+    color: rgb(255, 34, 34);
+}
+
 .hover-text-dim {
     transition: all 0.2s;
     color: rgb(150, 150, 150);
@@ -281,6 +290,8 @@ a {
 
 .users-list .user-item .user-name {
     flex-grow: 1;
+    line-height: 1.5rem;
+    font-size: 1.25rem;
 }
 
 .users-list .user-item .user-buttons .user-delete {
@@ -379,12 +390,59 @@ a {
     position: fixed;
     text-shadow: none;
     color: white;
-    width: 10rem;
-    background-color: red;
+    background-color: #333;
     z-index: 999;
     cursor: auto;
+    border-radius: 0.25rem;
+    border: 2px solid rgb(150, 150, 150);
 }
 
 .no-hover {
     cursor: auto !important;
+}
+
+.context-menu-title {
+    font-size: 1.25rem;
+    padding: 0.5rem;
+    border-bottom: 2px solid rgb(150, 150, 150);
+}
+
+.context-menu-item {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    position: relative;
+    height: 2.5rem;
+}
+
+.context-menu-item-icon {
+    font-size: 1.5rem;
+    line-height: 1.5rem;
+    flex-shrink: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.5rem;
+    height: 2.5rem;
+    width: 2.5rem;
+    text-align: center;
+}
+
+.context-menu-item-desc {
+    flex-grow: 1;
+    padding: 0.5rem;
+    padding-left: 0.25rem;
+    line-height: 1.5rem;
+    font-size: 1em;
+}
+
+.head-skin {
+    image-rendering: pixelated;
+    width: 1.5rem;
+    margin-right: 0.5rem;
+}
+
+.login-btn {
+    display: flex;
+    flex-direction: row;
 }

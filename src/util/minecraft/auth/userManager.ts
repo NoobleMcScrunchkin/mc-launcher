@@ -14,7 +14,10 @@ export class UserManager {
 		if (existsSync(UserManager.json_path)) {
 			let json = JSON.parse(readFileSync(UserManager.json_path).toString());
 			json.forEach((user: any) => {
-				UserManager.users.push(Object.setPrototypeOf(user, User.prototype));
+				let userObj = Object.setPrototypeOf(user, User.prototype);
+				UserManager.users.push(userObj);
+
+				userObj.download_skin();
 			});
 		}
 

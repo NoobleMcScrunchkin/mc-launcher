@@ -44,6 +44,10 @@ export function ContextMenu(props: any) {
 		};
 	}, [visible]);
 
+	if (!visible) {
+		return <div ref={nodeRef}></div>;
+	}
+
 	return (
 		<>
 			<div ref={nodeRef} className="context-menu" style={{ opacity: visible ? 1 : 0, pointerEvents: visible ? "auto" : "none", top: y, left: x }}>

@@ -1,6 +1,6 @@
 import * as React from "react";
-import { CloseBtn } from "./Components/CloseBtn";
-import { Btn } from "./Components/Btn";
+import { CloseBtn } from "./Components/Buttons/CloseBtn";
+import { Btn } from "./Components/Buttons/Btn";
 import { useNavigate } from "react-router-dom";
 import { Header } from "./Components/Header";
 import { Footer } from "./Components/Footer";

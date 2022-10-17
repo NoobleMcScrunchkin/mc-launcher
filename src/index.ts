@@ -7,7 +7,6 @@ import * as RPC from "discord-rpc";
 
 const rootCas = require("ssl-root-cas").create();
 rootCas.addFile(path.resolve(__dirname, `${process.resourcesPath}/intermediate.pem`));
-const httpsAgent = new https.Agent({ ca: rootCas });
 https.globalAgent.options.ca = rootCas;
 
 (async (): Promise<void> => {

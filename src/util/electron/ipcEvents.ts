@@ -38,9 +38,15 @@ ipcMain.on("START_INSTANCE", async (event, arg): Promise<void> => {
 		return;
 	}
 	try {
-		startGame(instance, () => {
-			event.sender.send("INSTANCE_STARTED", { uuid: instance.uuid });
-		});
+		startGame(
+			instance,
+			() => {
+				event.sender.send("INSTANCE_STARTED", { uuid: instance.uuid });
+			},
+			(msg: string) => {
+				Browser.mainWindow.webContents.executeJavaScript(`console.log("${msg.replace(/(\r\n|\n|\r)/gm, "")}")`);
+			}
+		);
 	} catch (e: any) {
 		event.sender.send("ERROR", { title: "Error starting game!", description: e instanceof Error ? e.message : e });
 		event.sender.send("INSTANCE_START_ERROR", { uuid: instance.uuid, error: e instanceof Error ? e.message : e });

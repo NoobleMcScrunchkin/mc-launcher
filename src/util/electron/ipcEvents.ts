@@ -3,6 +3,7 @@ import { UserManager } from "../minecraft/auth/userManager";
 import { InstanceManager } from "../minecraft/game/instanceManager";
 import { startGame } from "../minecraft/game/launcher";
 import { Browser } from "./browser";
+import { DiscordRPC } from "../discord/rpc";
 
 ipcMain.on("MINIMIZE", (event, arg): void => {
 	Browser.mainWindow?.minimize();
@@ -42,9 +43,15 @@ ipcMain.on("START_INSTANCE", async (event, arg): Promise<void> => {
 			instance,
 			() => {
 				event.sender.send("INSTANCE_STARTED", { uuid: instance.uuid });
+				DiscordRPC.setActivity("Playing Minecraft", instance.name, "rainbow_clouds", "Custom Launcher", "rainbow_clouds", "Playing some Minecraft");
+				DiscordRPC.setPlaying(true);
 			},
 			(msg: string) => {
 				Browser.mainWindow.webContents.executeJavaScript(`console.log("${msg.replace(/(\r\n|\n|\r)/gm, "")}")`);
+			},
+			() => {
+				DiscordRPC.setPlaying(false);
+				event.sender.send("SET_RPC", {});
 			}
 		);
 	} catch (e: any) {
@@ -80,4 +87,8 @@ ipcMain.on("SET_CURRENT_USER", async (event, arg): Promise<void> => {
 ipcMain.on("DELETE_USER", async (event, arg): Promise<void> => {
 	UserManager.delete_user(arg.uuid);
 	event.sender.send("GET_USERS", { user: UserManager.users });
+});
+
+ipcMain.on("SET_RPC", async (event, arg): Promise<void> => {
+	DiscordRPC.setActivity(arg.details, arg.state, arg.largeImageKey, arg.largeImageText, arg.smallImageKey, arg.smallImageText);
 });

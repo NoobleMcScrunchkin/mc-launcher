@@ -2,7 +2,7 @@ import * as React from "react";
 import { CloseBtn } from "./Components/Buttons/CloseBtn";
 import { Btn } from "./Components/Buttons/Btn";
 import { useNavigate } from "react-router-dom";
-const { ipcRenderer } = window.require("electron");
+const ipcRenderer = window.require("electron").ipcRenderer;
 
 export function InstanceCreator() {
 	const navigate = useNavigate();
@@ -27,6 +27,29 @@ export function InstanceCreator() {
 		ipcRenderer.send("CREATE_INSTANCE", { name, type, version });
 		navigate("/");
 	};
+
+	const setRPC = () => {
+		ipcRenderer.send("SET_RPC", {
+			details: "Creating an instance",
+			state: "Choosing options",
+			largeImageKey: "rainbow_clouds",
+			largeImageText: "Custom Launcher",
+			smallImageKey: "rainbow_clouds",
+			smallImageText: "Getting ready to play some Minecraft",
+		});
+	};
+
+	React.useEffect(() => {
+		setRPC();
+
+		ipcRenderer.addListener("SET_RPC", (event, arg) => {
+			setRPC();
+		});
+
+		return () => {
+			ipcRenderer.removeAllListeners("SET_RPC");
+		};
+	}, []);
 
 	return (
 		<div id="main-content">

@@ -5,9 +5,33 @@ import { Footer } from "./Components/Footer";
 import { LoadingIcon } from "./Components/Overlays/LoadingIcon";
 import { UsersList } from "./Components/Users/UsersList";
 import { AddUserBtn } from "./Components/Users/AddUserBtn";
+const ipcRenderer = window.require("electron").ipcRenderer;
 
 export function Users() {
 	const [mainLoading, setMainLoading] = React.useState("");
+
+	const setRPC = () => {
+		ipcRenderer.send("SET_RPC", {
+			details: "Viewing user profiles",
+			state: "Choosing a user to play as",
+			largeImageKey: "rainbow_clouds",
+			largeImageText: "Custom Launcher",
+			smallImageKey: "rainbow_clouds",
+			smallImageText: "Getting ready to play some Minecraft",
+		});
+	};
+
+	React.useEffect(() => {
+		setRPC();
+
+		ipcRenderer.addListener("SET_RPC", (event, arg) => {
+			setRPC();
+		});
+
+		return () => {
+			ipcRenderer.removeAllListeners("SET_RPC");
+		};
+	}, []);
 
 	return (
 		<div id="main-content" className={mainLoading}>

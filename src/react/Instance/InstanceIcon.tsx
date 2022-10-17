@@ -5,11 +5,15 @@ import { ContextMenu } from "../Components/ContextMenu/ContextMenu";
 import { ContextMenuNavItem } from "../Components/ContextMenu/ContextMenuNavItem";
 import { LoadingIcon } from "../Components/Overlays/LoadingIcon";
 import { PlayIconOverlay } from "../Components/Overlays/PlayIconOverlay";
+import LinesEllipsis from "react-lines-ellipsis";
+import responsiveHOC from "react-lines-ellipsis/lib/responsiveHOC";
+const ResponsiveEllipsis = responsiveHOC()(LinesEllipsis);
 const { ipcRenderer } = window.require("electron");
 
 export function InstanceIcon(props: any) {
 	const nodeRef = React.useRef();
-	const [loading, setLoading] = React.useState("");
+	const [loading, setLoading] = React.useState<string>("");
+	const [forceUpdate, setForceUpdate] = React.useState<number>(0);
 
 	let instance: Instance = props.instance;
 
@@ -45,7 +49,9 @@ export function InstanceIcon(props: any) {
 		<>
 			<div className={`instance-icon ${loading}`}>
 				<div ref={nodeRef} className={`instance-container hover-border loading-dim hover-text-dim hover-text-blur`} onMouseDown={startGame}>
-					<div className="instance-name">{instance.name}</div>
+					<div className="instance-name">
+						<ResponsiveEllipsis text={instance.name} maxLine="2" ellipsis="..." trimRight basedOn="letters" />
+					</div>
 					<PlayIconOverlay />
 					<ContextMenu title={instance.name}>
 						<ContextMenuNavItem to={"#"} icon={<i className="fa-solid fa-pencil"></i>}>

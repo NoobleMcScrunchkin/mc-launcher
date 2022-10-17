@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
-import { User } from "../../util/minecraft/auth/user";
+import { User } from "../../../util/minecraft/auth/user";
 const { ipcRenderer } = window.require("electron");
 
 export function UsersList(props: any) {
@@ -45,7 +45,7 @@ export function UsersList(props: any) {
 							return (
 								<div
 									key={user.uuid}
-									className="user-item"
+									className="user-item hover-text"
 									onClick={(e) => {
 										setCurrentUser(e, user.uuid);
 									}}>

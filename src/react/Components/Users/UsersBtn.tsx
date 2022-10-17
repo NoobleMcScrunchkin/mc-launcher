@@ -1,6 +1,6 @@
 import * as React from "react";
-import { Btn } from "../Components/Buttons/Btn";
-import { User } from "../../util/minecraft/auth/user";
+import { Btn } from "../Buttons/Btn";
+import { User } from "../../../util/minecraft/auth/user";
 import { Link } from "react-router-dom";
 const { ipcRenderer } = window.require("electron");
 
@@ -16,7 +16,6 @@ export function UsersBtn(props: any) {
 
 		ipcRenderer.addListener("GET_USER", (event, arg) => {
 			setCurrentUser(arg.user);
-			console.log(arg.user);
 		});
 
 		return () => {

@@ -1,4 +1,3 @@
-import { displayError } from "../../handleError";
 import electron from "electron";
 import fetch from "node-fetch";
 import { User } from "./user";
@@ -14,7 +13,6 @@ export function microsoftLogin(): Promise<any> {
 			let user = await User.create(token, mc_token);
 			resolve(user);
 		} catch (e: any) {
-			displayError(e.toString());
 			reject(e);
 		}
 	});
@@ -32,7 +30,6 @@ export function token_update(refresh_token: string): Promise<any> {
 				mc_token: mc_token,
 			});
 		} catch (e: any) {
-			displayError(e.toString());
 			reject(e);
 		}
 	});
@@ -64,6 +61,10 @@ async function show_microsoft_login(): Promise<String> {
 			} catch (e) {
 				reject(e);
 			}
+		});
+
+		win.on("closed", () => {
+			reject("Login window closed");
 		});
 	});
 }

@@ -37,19 +37,24 @@ ipcMain.on("START_INSTANCE", async (event, arg): Promise<void> => {
 	if (!instance) {
 		return;
 	}
-	startGame(
-		instance,
-		() => {
+	try {
+		startGame(instance, () => {
 			event.sender.send("INSTANCE_STARTED", { uuid: instance.uuid });
-		},
-		(error) => {
-			event.sender.send("INSTANCE_START_ERROR", { uuid: instance.uuid, error });
-		}
-	);
+		});
+	} catch (e: any) {
+		event.sender.send("ERROR", { title: "Error starting game!", description: e instanceof Error ? e.message : e });
+		event.sender.send("INSTANCE_START_ERROR", { uuid: instance.uuid, error: e instanceof Error ? e.message : e });
+	}
 });
 
 ipcMain.on("ADD_USER", async (event, arg): Promise<void> => {
-	let user = await UserManager.login();
+	try {
+		let user = await UserManager.login();
+	} catch (e: any) {
+		if (e instanceof Error || e != "Login window closed") {
+			event.sender.send("ERROR", { title: "Error logging in!", description: e instanceof Error ? e.message : e });
+		}
+	}
 	event.sender.send("GET_USERS", { users: UserManager.users });
 });
 

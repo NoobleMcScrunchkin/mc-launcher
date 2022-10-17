@@ -4,7 +4,6 @@ import { User } from "../auth/user";
 import { UserManager } from "../auth/userManager";
 import { Browser } from "../../electron/browser";
 import { mkdirSync } from "fs";
-import { displayError } from "../../handleError";
 
 export async function startGame(instance: Instance, started_callback: () => void = () => {}, error_callback: (error: string) => void = (error) => {}, stdout_callback: (data: string) => void = (data) => {}): Promise<void> {
 	let user: User = UserManager.currentUser;
@@ -12,9 +11,7 @@ export async function startGame(instance: Instance, started_callback: () => void
 	try {
 		await user.update_tokens();
 	} catch (e) {
-		displayError("Error updating tokens");
-		error_callback("Error updating tokens");
-		return;
+		throw e;
 	}
 
 	mkdirSync(instance.mc_dir, { recursive: true });

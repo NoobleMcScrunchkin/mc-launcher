@@ -446,3 +446,35 @@ a {
     display: flex;
     flex-direction: row;
 }
+
+.popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    transform: translate(-50%, -50%);
+    min-width: 50%;
+    max-width: 100%;
+    max-height: 75%;
+    border-radius: 0.25rem;
+    border: 2px solid rgb(150, 150, 150);
+}
+
+.popup-head {
+    display: flex;
+    flex-direction: row;
+    padding: 0.5rem;
+    border-bottom: 2px solid rgb(150, 150, 150);
+    background-color: #333;
+    font-size: 1.25rem;
+    line-height: 1.25rem;
+    position: relative;
+}
+
+.popup-desc {
+    padding: 0.5rem;
+    background-color: #292929;
+    font-size: 1rem;
+}

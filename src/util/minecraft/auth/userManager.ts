@@ -46,19 +46,23 @@ export class UserManager {
 	}
 
 	static async login(): Promise<User> {
-		let user: User = await microsoftLogin();
-		let existingUser = UserManager.users.findIndex((u) => {
-			return u.uuid == user.uuid;
-		});
+		try {
+			let user: User = await microsoftLogin();
+			let existingUser = UserManager.users.findIndex((u) => {
+				return u.uuid == user.uuid;
+			});
 
-		if (existingUser != -1) {
-			UserManager.users[existingUser] = user;
-		} else {
-			UserManager.users.push(user);
+			if (existingUser != -1) {
+				UserManager.users[existingUser] = user;
+			} else {
+				UserManager.users.push(user);
+			}
+
+			UserManager.currentUser = user;
+			UserManager.saveUsers();
+		} catch (e: any) {
+			throw e;
 		}
-
-		UserManager.currentUser = user;
-		UserManager.saveUsers();
 
 		return UserManager.currentUser;
 	}

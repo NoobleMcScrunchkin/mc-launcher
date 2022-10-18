@@ -15,4 +15,4 @@ InstanceManager.update_versions();
 InstanceManager.loadInstances();
 UserManager.loadUsers();
 Browser.init();
-// DiscordRPC.init();
+DiscordRPC.init();

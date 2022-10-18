@@ -4,40 +4,11 @@
 <head>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600&family=Roboto+Mono&display=swap" rel="stylesheet">
 </head>
 
 <body>
-    <div id="root">
-        <div id="title-bar">
-            <div id="title">
-                Custom Minecraft Launcher
-            </div>
-            <div id="title-bar-btns">
-                <div id="min-btn"><i class="fa-solid fa-angle-down"></i></div>
-                <div id="max-btn"><i class="fa-solid fa-angle-up"></i></div>
-                <div id="close-btn"><i class="fa-solid fa-xmark"></i></div>
-            </div>
-        </div>
-        <div id="react-root">
-
-        </div>
-    </div>
-    <script>
-        const { ipcRenderer } = require('electron');
-
-        document.getElementById("min-btn").addEventListener("click", (e) => {
-            ipcRenderer.send("MINIMIZE");
-        });
-
-        document.getElementById("max-btn").addEventListener("click", (e) => {
-            ipcRenderer.send("MAXIMIZE");
-        });
-
-        document.getElementById("close-btn").addEventListener("click", (e) => {
-            ipcRenderer.send("CLOSE");
-        });
-    </script>
+    <div id="root"></div>
 </body>
 
 </html>

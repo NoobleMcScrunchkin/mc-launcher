@@ -1,9 +1,12 @@
-import { ipcMain } from "electron";
+import { ipcMain, BrowserWindow } from "electron";
 import { UserManager } from "../minecraft/auth/userManager";
 import { InstanceManager } from "../minecraft/game/instanceManager";
 import { startGame } from "../minecraft/game/launcher";
 import { Browser } from "./browser";
 import { DiscordRPC } from "../discord/rpc";
+import { Settings } from "../settings";
+
+declare const DASHBOARD_WEBPACK_ENTRY: string;
 
 ipcMain.on("MINIMIZE", (event, arg): void => {
 	Browser.mainWindow?.minimize();
@@ -39,19 +42,53 @@ ipcMain.on("START_INSTANCE", async (event, arg): Promise<void> => {
 		return;
 	}
 	try {
+		let logWindow: BrowserWindow = null;
 		startGame(
 			instance,
 			() => {
 				event.sender.send("INSTANCE_STARTED", { uuid: instance.uuid });
 				DiscordRPC.setActivity("Playing Minecraft", instance.name, "rainbow_clouds", "Custom Launcher", "rainbow_clouds", "Playing some Minecraft");
 				DiscordRPC.setPlaying(true);
+
+				if (Settings.do_open_log_on_launch()) {
+					logWindow = new BrowserWindow({
+						height: 600,
+						width: 800,
+						webPreferences: {
+							nodeIntegration: true,
+							contextIsolation: false,
+						},
+						frame: true,
+						autoHideMenuBar: true,
+					});
+
+					logWindow.removeMenu();
+
+					logWindow.loadURL(DASHBOARD_WEBPACK_ENTRY + "#/log");
+
+					logWindow.on("closed", () => {
+						logWindow = null;
+					});
+
+					Browser.mainWindow.on("closed", () => {
+						logWindow.close();
+						logWindow = null;
+					});
+				}
 			},
 			(msg: string) => {
 				Browser.mainWindow.webContents.executeJavaScript(`console.log("${msg.replace(/(\r\n|\n|\r)/gm, "")}")`);
+				if (logWindow != null) {
+					logWindow.webContents.executeJavaScript(`window.dispatchEvent(new CustomEvent("gamelog", {detail: "${msg.replace(/(\r\n|\n|\r)/gm, "")}"}))`);
+				}
 			},
 			() => {
 				DiscordRPC.setPlaying(false);
 				event.sender.send("SET_RPC", {});
+				if (logWindow != null) {
+					logWindow.close();
+					logWindow = null;
+				}
 			}
 		);
 	} catch (e: any) {

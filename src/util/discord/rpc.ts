@@ -26,13 +26,17 @@ export class DiscordRPC {
 		this.setActivity("In the main menu", "Viewing the dashboard", "rainbow_clouds", "Custom Launcher", "rainbow_clouds", "Getting ready to play some Minecraft");
 	}
 
-	static setActivity(details: string, state: string, largeImageKey: string, largeImageText: string, smallImageKey: string, smallImageText: string) {
+	static setActivity(details: string, state: string, largeImageKey: string, largeImageText: string, smallImageKey: string, smallImageText: string, newTimestamp: boolean = false) {
 		if (!this.rpc) {
 			return;
 		}
 
 		if (this.playing) {
 			return;
+		}
+
+		if (newTimestamp) {
+			this.startTimestamp = new Date();
 		}
 
 		this.rpc.setActivity({
@@ -49,6 +53,5 @@ export class DiscordRPC {
 
 	static setPlaying(playing: boolean) {
 		this.playing = playing;
-		this.startTimestamp = new Date();
 	}
 }

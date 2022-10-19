@@ -25,12 +25,11 @@ export class Settings {
 		Settings.save_settings();
 	}
 
-	static do_open_log_on_launch(): boolean {
-		return Settings.settings_storage.open_log_on_launch;
+	static get_key(key: string): any {
+		return this.settings_storage[key as keyof typeof this.settings_storage];
 	}
 
-	static set_open_log_on_launch(value: boolean): void {
-		Settings.settings_storage.open_log_on_launch = value;
-		Settings.save_settings();
+	static set_key(key: string, value: any): void {
+		this.settings_storage[key as keyof typeof this.settings_storage] = value;
 	}
 }

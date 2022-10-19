@@ -115,6 +115,11 @@ a {
     font-size: 3rem;
 }
 
+#header .buttons, #footer .buttons {
+    display: flex;
+    flex-direction: row;
+}
+
 .hover-border {
     transition: all 0.2s;
     border: 2px solid rgb(150, 150, 150);
@@ -486,4 +491,44 @@ a {
     white-space: nowrap;
     font-family: 'Roboto Mono', monospace;
     font-weight: 400;
+    font-size: 0.75rem;
+}
+
+.settings-btn {
+    height: 3rem;
+    width: 3rem;
+    line-height: 3rem;
+    font-size: 2rem;
+}
+
+.settings-container {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: row;
+    border-top: 2px solid rgb(150, 150, 150);
+}
+
+.setting-sidebar {
+    background-color: #333;
+    min-width: 150px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    font-size: 1.25rem;
+    border-right: 2px solid rgb(150, 150, 150);
+}
+
+.settings-content {
+    background-color: #292929;
+    flex-grow: 1;
+    height: 100%;
+}
+
+.setting-sidebar-item {
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+}
+
+.active {
+    color: white;
 }

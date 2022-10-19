@@ -47,10 +47,10 @@ ipcMain.on("START_INSTANCE", async (event, arg): Promise<void> => {
 			instance,
 			() => {
 				event.sender.send("INSTANCE_STARTED", { uuid: instance.uuid });
-				DiscordRPC.setActivity("Playing Minecraft", instance.name, "rainbow_clouds", "Custom Launcher", "rainbow_clouds", "Playing some Minecraft");
+				DiscordRPC.setActivity("Playing Minecraft", instance.name, "rainbow_clouds", "Custom Launcher", "rainbow_clouds", "Playing some Minecraft", true);
 				DiscordRPC.setPlaying(true);
 
-				if (Settings.do_open_log_on_launch()) {
+				if (Settings.get_key("open_log_on_launch")) {
 					logWindow = new BrowserWindow({
 						height: 600,
 						width: 800,
@@ -64,6 +64,8 @@ ipcMain.on("START_INSTANCE", async (event, arg): Promise<void> => {
 
 					logWindow.removeMenu();
 
+					logWindow.setTitle("Minecraft Log - " + instance.name);
+
 					logWindow.loadURL(DASHBOARD_WEBPACK_ENTRY + "#/log");
 
 					logWindow.on("closed", () => {
@@ -71,8 +73,10 @@ ipcMain.on("START_INSTANCE", async (event, arg): Promise<void> => {
 					});
 
 					Browser.mainWindow.on("closed", () => {
-						logWindow.close();
-						logWindow = null;
+						if (logWindow != null) {
+							logWindow.close();
+							logWindow = null;
+						}
 					});
 				}
 			},
@@ -128,4 +132,12 @@ ipcMain.on("DELETE_USER", async (event, arg): Promise<void> => {
 
 ipcMain.on("SET_RPC", async (event, arg): Promise<void> => {
 	DiscordRPC.setActivity(arg.details, arg.state, arg.largeImageKey, arg.largeImageText, arg.smallImageKey, arg.smallImageText);
+});
+
+ipcMain.on("SET_SETTING", async (event, arg): Promise<void> => {
+	Settings.set_key(arg.key, arg.value);
+});
+
+ipcMain.handle("GET_SETTING", async (event, arg): Promise<any> => {
+	return Settings.get_key(arg.key);
 });

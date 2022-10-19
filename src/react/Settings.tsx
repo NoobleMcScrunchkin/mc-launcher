@@ -1,17 +1,18 @@
 import * as React from "react";
-import { InstanceGrid } from "./Instance/InstanceGrid";
 import { Header } from "./Components/Header";
-import { Footer } from "./Components/Footer";
-import { AddInstanceBtn } from "./Instance/AddInstanceBtn";
-import { UsersBtn } from "./Components/Users/UsersBtn";
-import { SettingsBtn } from "./Components/Settings/SettingsBtn";
+import { CloseBtn } from "./Components/Buttons/CloseBtn";
+import { SettingsSidebar } from "./Components/Settings/SettingsSidebar";
+import { Outlet, useLocation } from "react-router-dom";
 const ipcRenderer = window.require("electron").ipcRenderer;
 
-export function Dashboard() {
+export function Settings(props: any) {
+	const location = useLocation();
+	const locationStr = location.pathname.split("/")[2];
+
 	const setRPC = () => {
 		ipcRenderer.send("SET_RPC", {
-			details: "In the main menu",
-			state: "Viewing the dashboard",
+			details: "In the settings menu",
+			state: "Changing settings",
 			largeImageKey: "rainbow_clouds",
 			largeImageText: "Custom Launcher",
 			smallImageKey: "rainbow_clouds",
@@ -35,20 +36,18 @@ export function Dashboard() {
 		<div id="main-content">
 			<Header>
 				<div className="info">
-					<div className="header-title">MC Launcher</div>
+					<div className="header-title">Settings</div>
 				</div>
 				<div className="buttons">
-					<SettingsBtn />
-					<UsersBtn />
+					<CloseBtn />
 				</div>
 			</Header>
-			<InstanceGrid style={{ flexGrow: 1 }} />
-			<Footer>
-				<div className="info"></div>
-				<div className="buttons">
-					<AddInstanceBtn />
+			<div className="settings-container">
+				<SettingsSidebar currentPage={locationStr} />
+				<div className="settings-content">
+					<Outlet />
 				</div>
-			</Footer>
+			</div>
 		</div>
 	);
 }

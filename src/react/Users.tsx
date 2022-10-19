@@ -38,8 +38,10 @@ export function Users() {
 			<Header className="loading-dim">
 				<div className="info">
 					<div className="header-title">Users</div>
+					<div className="buttons">
+						<CloseBtn />
+					</div>
 				</div>
-				<CloseBtn />
 			</Header>
 			<UsersList className="loading-dim" style={{ flexGrow: 1 }} loading={setMainLoading} />
 			<Footer className="loading-dim">

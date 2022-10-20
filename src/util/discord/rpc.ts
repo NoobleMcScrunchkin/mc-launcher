@@ -5,21 +5,39 @@ export class DiscordRPC {
 	static clientId: string = "1031380679340072992";
 	static startTimestamp: Date;
 	static playing: boolean;
+	static connected: boolean = false;
 
-	static init() {
-		this.startTimestamp = new Date();
+	static init(doReady: boolean = true, callback: Function = () => {}) {
+		try {
+			this.startTimestamp = new Date();
 
-		this.rpc = new RPC.Client({ transport: "ipc" });
+			this.rpc = new RPC.Client({ transport: "ipc" });
 
-		this.rpc.on("ready", () => {
-			this.setDefaultActivity();
-		});
+			if (doReady) {
+				this.rpc.on("ready", () => {
+					this.setDefaultActivity();
+				});
+			}
 
-		this.rpc.login({ clientId: this.clientId }).catch(console.error);
+			this.rpc
+				.login({ clientId: this.clientId })
+				.then(() => {
+					DiscordRPC.connected = true;
+					callback();
+				})
+				.catch(() => {
+					this.rpc = null;
+				});
+		} catch (e) {
+			this.rpc = null;
+		}
 	}
 
 	static setDefaultActivity() {
-		if (!this.rpc) {
+		if (!this.rpc || !DiscordRPC.connected) {
+			DiscordRPC.init(false, () => {
+				DiscordRPC.setDefaultActivity();
+			});
 			return;
 		}
 
@@ -27,7 +45,10 @@ export class DiscordRPC {
 	}
 
 	static setActivity(details: string, state: string, largeImageKey: string, largeImageText: string, smallImageKey: string, smallImageText: string, newTimestamp: boolean = false) {
-		if (!this.rpc) {
+		if (!this.rpc || !DiscordRPC.connected) {
+			DiscordRPC.init(false, () => {
+				DiscordRPC.setActivity(details, state, largeImageKey, largeImageText, smallImageKey, smallImageText, newTimestamp);
+			});
 			return;
 		}
 

@@ -31,8 +31,6 @@ export class Instance {
 	java_version: number = 0;
 	main_class: string = "";
 	version_json: any = {};
-	java_args: string = "";
-	mc_args: string = "";
 	version_type: string = "release";
 
 	constructor(name: string, type: "vanilla" | "fabric" | "forge", version: string) {
@@ -70,6 +68,96 @@ export class Instance {
 
 			await this.download_assets();
 		}
+	}
+
+	get_mc_args(): Array<string> {
+		let mc_args: Array<string> = [...(this.version_json.minecraftArguments ? this.version_json.minecraftArguments.split(" ") : [])];
+
+		if (this.version_json.arguments) {
+			if (this.version_json.arguments.game) {
+				this.version_json.arguments.game.forEach((arg: any) => {
+					if (typeof arg !== "string" && arg.rules) {
+						let add = false;
+						arg.rules.forEach((rule: any) => {
+							if (rule.action == "allow") {
+								if (rule.os) {
+									if (rule.os.name == get_platform() || rule.os.arch == process.arch) {
+										add = true;
+									}
+								} else if (rule.features) {
+									Object.keys(rule.features).forEach((feature: any) => {
+										//TODO compare this against settings.
+										if (rule.features[feature] == false) {
+											add = true;
+										}
+									});
+								} else {
+									add = true;
+								}
+							}
+						});
+						if (add) {
+							if (typeof arg.value == "string") {
+								mc_args.push(arg.value);
+							} else {
+								mc_args.push(...arg.value);
+							}
+						}
+					} else {
+						mc_args.push(arg);
+					}
+				});
+			}
+		}
+
+		return mc_args;
+	}
+
+	get_jvm_args(): Array<string> {
+		let jvm_args: Array<string> = [];
+
+		if (this.version_json.arguments) {
+			if (this.version_json.arguments.jvm) {
+				this.version_json.arguments.jvm.forEach((arg: any) => {
+					if (typeof arg !== "string" && arg.rules) {
+						let add = false;
+						arg.rules.forEach((rule: any) => {
+							if (rule.action == "allow") {
+								if (rule.os) {
+									if (rule.os.name == get_platform() || rule.os.arch == process.arch) {
+										add = true;
+									}
+								} else if (rule.features) {
+									Object.keys(rule.features).forEach((feature: any) => {
+										//TODO compare this against settings.
+										if (rule.features[feature] == false) {
+											add = true;
+										}
+									});
+								} else {
+									add = true;
+								}
+							}
+						});
+						if (add) {
+							if (typeof arg.value == "string") {
+								jvm_args.push(arg.value);
+							} else {
+								jvm_args.push(...arg.value);
+							}
+						}
+					} else {
+						jvm_args.push(arg);
+					}
+				});
+			}
+		}
+
+		if (jvm_args.length == 0) {
+			return ["-Djava.library.path=${natives_directory}", "-Dminecraft.launcher.brand=custom-launcher", "-Dminecraft.launcher.version=1.0", "-cp", "${classpath}"];
+		}
+
+		return jvm_args;
 	}
 
 	download_asset_index(id: string, url: string, location: string): Promise<any> {

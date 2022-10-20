@@ -494,6 +494,10 @@ a {
     font-size: 0.75rem;
 }
 
+.logs-container * {
+    user-select: text !important;
+}
+
 .settings-btn {
     height: 3rem;
     width: 3rem;

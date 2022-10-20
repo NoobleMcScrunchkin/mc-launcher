@@ -23,6 +23,7 @@ export class Instance {
 	uuid: string = "00000000-0000-0000-0000-000000000000";
 	type: string = "";
 	version: string = "";
+	loader_version: string = "";
 	mc_dir: string = "";
 	natives_dir: string = "";
 	libraries: Array<String> = [];
@@ -33,17 +34,18 @@ export class Instance {
 	version_json: any = {};
 	version_type: string = "release";
 
-	constructor(name: string, type: "vanilla" | "fabric" | "forge", version: string) {
+	constructor(name: string, type: "vanilla" | "fabric" | "forge", version: string, loader_version: string = "") {
 		this.name = name;
 		this.uuid = v4();
 		this.type = type;
 		this.version = version;
+		this.loader_version = loader_version;
 		this.mc_dir = path.resolve(Storage.resourcesPath + "/Storage/instances/" + this.uuid);
 		this.natives_dir = this.mc_dir + "/natives";
 	}
 
-	static async create(name: string, type: "vanilla" | "fabric" | "forge", version: string): Promise<Instance> {
-		let instance = new Instance(name, type, version);
+	static async create(name: string, type: "vanilla" | "fabric" | "forge", version: string, loader_version: string = ""): Promise<Instance> {
+		let instance = new Instance(name, type, version, loader_version);
 		await instance.download_version_info();
 		await instance.init_data();
 		return instance;
@@ -51,22 +53,68 @@ export class Instance {
 
 	async download_version_info(): Promise<void> {
 		console.log("Downloading version information");
-		let manifest = JSON.parse(readFileSync(Storage.resourcesPath + "/Storage/version_manifest_v2.json").toString());
-		let version = manifest.versions.find((v: any) => v.id == this.version);
-		if (version) {
-			let res = await fetch(version.url);
-			let versionJson = await res.json();
-			this.version_json = versionJson;
-			this.asset_index = this.version_json.assetIndex.id;
-			if (this.version_json.javaVersion) {
-				this.java_version = this.version_json.javaVersion.majorVersion;
-			} else {
-				this.java_version = 17;
-			}
-			this.main_class = this.version_json.mainClass;
-			this.version_type = this.version_json.type;
 
-			await this.download_assets();
+		let mod_json: any = null;
+
+		if (this.type == "fabric") {
+			let res = await fetch(`https://meta.fabricmc.net/v2/versions/loader/${this.version}/${this.loader_version}/profile/json`);
+			mod_json = await res.json();
+
+			let manifest = JSON.parse(readFileSync(Storage.resourcesPath + "/Storage/version_manifest_v2.json").toString());
+			let version = manifest.versions.find((v: any) => v.id == mod_json.inheritsFrom);
+			if (version) {
+				let res = await fetch(version.url);
+				let versionJson = await res.json();
+
+				if (versionJson.libraries && mod_json.libraries) {
+					versionJson.libraries.push(...mod_json.libraries);
+				}
+
+				if (versionJson.minecraftArguments && mod_json.minecraftArguments) {
+					versionJson.minecraftArguments += " " + mod_json.minecraftArguments;
+				}
+
+				if (versionJson.arguments && mod_json.arguments) {
+					if (mod_json.arguments.game && versionJson.arguments.game) {
+						versionJson.arguments.game.push(...mod_json.arguments.game);
+					}
+					if (mod_json.arguments.jvm && versionJson.arguments.jvm) {
+						versionJson.arguments.jvm.push(...mod_json.arguments.jvm);
+					}
+				}
+
+				versionJson.mainClass = mod_json.mainClass;
+
+				this.version_json = versionJson;
+				this.asset_index = this.version_json.assetIndex.id;
+				if (this.version_json.javaVersion) {
+					this.java_version = this.version_json.javaVersion.majorVersion;
+				} else {
+					this.java_version = 17;
+				}
+				this.main_class = this.version_json.mainClass;
+				this.version_type = this.version_json.type;
+
+				await this.download_assets();
+			}
+		} else if (this.type == "vanilla") {
+			let manifest = JSON.parse(readFileSync(Storage.resourcesPath + "/Storage/version_manifest_v2.json").toString());
+			let version = manifest.versions.find((v: any) => v.id == this.version);
+			if (version) {
+				let res = await fetch(version.url);
+				let versionJson = await res.json();
+				this.version_json = versionJson;
+				this.asset_index = this.version_json.assetIndex.id;
+				if (this.version_json.javaVersion) {
+					this.java_version = this.version_json.javaVersion.majorVersion;
+				} else {
+					this.java_version = 17;
+				}
+				this.main_class = this.version_json.mainClass;
+				this.version_type = this.version_json.type;
+
+				await this.download_assets();
+			}
 		}
 	}
 
@@ -249,6 +297,20 @@ export class Instance {
 
 						if (!existsSync(Storage.resourcesPath + "/Storage/libraries/" + jarPath + "/" + jarFile)) {
 							await this.download_library(lib.downloads.artifact.url, jarPath, jarFile);
+						}
+					} else if (lib.url) {
+						jarFile = libName + "-" + libVersion + ".jar";
+
+						let library: any = {
+							name: lib.name,
+							path: jarPath,
+							file: jarFile,
+						};
+
+						this.libraries.push(library);
+
+						if (!existsSync(Storage.resourcesPath + "/Storage/libraries/" + jarPath + "/" + jarFile)) {
+							await this.download_library(`${lib.url}/${jarPath}/${jarFile}`, jarPath, jarFile);
 						}
 					}
 

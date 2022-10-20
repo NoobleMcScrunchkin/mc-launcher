@@ -1,7 +1,7 @@
 import * as React from "react";
-const ipcRenderer = window.require("electron").ipcRenderer;
 
 export function Log() {
+	let logsEndRef: HTMLElement = null;
 	const [logs, setLogs] = React.useState<React.ReactElement>(null);
 
 	const handleGameLog = (event: CustomEvent) => {
@@ -14,7 +14,15 @@ export function Log() {
 		);
 	};
 
+	const scrollToBottom = () => {
+		if (!logsEndRef) {
+			return;
+		}
+		logsEndRef.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
+	};
+
 	React.useEffect(() => {
+		scrollToBottom();
 		window.addEventListener("gamelog", handleGameLog);
 
 		return () => {
@@ -24,7 +32,14 @@ export function Log() {
 
 	return (
 		<div id="main-content">
-			<div className="logs-container">{logs}</div>
+			<div className="logs-container" id="logs-container">
+				{logs}
+				<div
+					ref={(el) => {
+						logsEndRef = el;
+					}}
+				/>
+			</div>
 		</div>
 	);
 }

@@ -25,7 +25,7 @@ ipcMain.on("CLOSE", (event, arg): void => {
 });
 
 ipcMain.on("CREATE_INSTANCE", async (event, arg): Promise<void> => {
-	let instance = await InstanceManager.createInstance(arg.name, arg.type, arg.version);
+	let instance = await InstanceManager.createInstance(arg.name, arg.type, arg.version, arg.modLoaderVersion);
 	let instances = InstanceManager.getInstances();
 	event.sender.send("GET_INSTANCES", { instances });
 });
@@ -81,7 +81,9 @@ ipcMain.on("START_INSTANCE", async (event, arg): Promise<void> => {
 				}
 			},
 			(msg: string) => {
-				Browser.mainWindow.webContents.executeJavaScript(`console.log("${msg.replace(/(\r\n|\n|\r)/gm, "")}")`);
+				if (Browser.mainWindow != null) {
+					Browser.mainWindow.webContents.executeJavaScript(`console.log("${msg.replace(/(\r\n|\n|\r)/gm, "")}")`);
+				}
 				if (logWindow != null) {
 					logWindow.webContents.executeJavaScript(`window.dispatchEvent(new CustomEvent("gamelog", {detail: "${msg.replace(/(\r\n|\n|\r)/gm, "")}"}))`);
 				}

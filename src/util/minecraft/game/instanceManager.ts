@@ -42,8 +42,8 @@ export class InstanceManager {
 		writeFileSync(this.json_path, json);
 	}
 
-	static async createInstance(name: string, type: "vanilla" | "fabric" | "forge", version: string): Promise<Instance> {
-		let instance = await Instance.create(name, type, version);
+	static async createInstance(name: string, type: "vanilla" | "fabric" | "forge", version: string, loader_version: string = ""): Promise<Instance> {
+		let instance = await Instance.create(name, type, version, loader_version);
 		this.addInstance(instance);
 		return instance;
 	}

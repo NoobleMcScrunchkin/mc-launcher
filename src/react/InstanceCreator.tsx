@@ -10,6 +10,7 @@ export function InstanceCreator() {
 	const [name, setName] = React.useState("");
 	const [type, setType] = React.useState("vanilla");
 	const [version, setVersion] = React.useState("");
+	const [modLoaderVersion, setModLoaderVersion] = React.useState("");
 
 	const handleNameChange = (event: any) => {
 		setName(event.target.value);
@@ -23,8 +24,12 @@ export function InstanceCreator() {
 		setVersion(event.target.value);
 	};
 
+	const handleModLoaderVersionChange = (event: any) => {
+		setModLoaderVersion(event.target.value);
+	};
+
 	const createInstance = () => {
-		ipcRenderer.send("CREATE_INSTANCE", { name, type, version });
+		ipcRenderer.send("CREATE_INSTANCE", { name, type, version, modLoaderVersion });
 		navigate("/");
 	};
 
@@ -67,6 +72,10 @@ export function InstanceCreator() {
 				<div className="input-group">
 					<label htmlFor="version">Version</label>
 					<input type="text" name="version" id="version" value={version} onChange={handleVersionChange} />
+				</div>
+				<div className="input-group">
+					<label htmlFor="version">ModLoader Version</label>
+					<input type="text" name="modLoaderVersion" id="modLoaderVersion" value={modLoaderVersion} onChange={handleModLoaderVersionChange} />
 				</div>
 
 				<Btn style={{ marginTop: "1rem" }} onClick={createInstance}>

@@ -27,6 +27,8 @@ export function InstanceIcon(props: any) {
 	};
 
 	React.useEffect(() => {
+		ipcRenderer.setMaxListeners(999);
+
 		ipcRenderer.on("INSTANCE_STARTED", (event, args) => {
 			if (args.uuid == instance.uuid) {
 				setLoading("");

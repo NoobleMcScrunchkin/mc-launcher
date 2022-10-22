@@ -11,6 +11,8 @@
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "jsx": "react",
+    "target": "es5",
+    "lib": ["es2021", "DOM"],
     "paths": {
       "*": ["node_modules/*"]
     }

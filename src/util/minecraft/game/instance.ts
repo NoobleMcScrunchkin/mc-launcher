@@ -2,10 +2,10 @@ import { readFileSync, mkdirSync, createWriteStream, existsSync, createReadStrea
 import fetch from "node-fetch";
 import https from "https";
 import path from "path";
-import { app } from "electron";
 import { v4 } from "uuid";
 import unzipper from "unzipper";
 import { Storage } from "../../storage";
+import { exec } from "child_process";
 
 function get_platform() {
 	let platform = process.platform;
@@ -17,6 +17,14 @@ function get_platform() {
 		return "linux";
 	}
 }
+
+const pathFromMaven = (maven: string) => {
+	const pathSplit = maven.split(":");
+	const fileName = pathSplit[3] ? `${pathSplit[2]}-${pathSplit[3]}` : pathSplit[2];
+	const finalFileName = fileName.includes("@") ? fileName.replace("@", ".") : `${fileName}.jar`;
+	const initPath = pathSplit[0].split(".").concat(pathSplit[1]).concat(pathSplit[2].split("@")[0]).concat(`${pathSplit[1]}-${finalFileName}`);
+	return initPath.join("/");
+};
 
 export class Instance {
 	name: string = "";
@@ -46,7 +54,6 @@ export class Instance {
 
 	static async create(name: string, type: "vanilla" | "fabric" | "forge", version: string, loader_version: string = ""): Promise<Instance> {
 		let instance = new Instance(name, type, version, loader_version);
-		await instance.download_version_info();
 		await instance.init_data();
 		return instance;
 	}
@@ -115,6 +122,201 @@ export class Instance {
 
 				await this.download_assets();
 			}
+		} else if (this.type == "forge") {
+			let res = await fetch(`https://files.minecraftforge.net/maven/net/minecraftforge/forge/${this.version}-${this.loader_version}/forge-${this.version}-${this.loader_version}-installer.jar`);
+			let installer = await res.buffer();
+			let installerDirPath = path.resolve(Storage.resourcesPath + `/Storage/versions/forge-${this.version}-${this.loader_version}`);
+			let installerFilePath = path.resolve(Storage.resourcesPath + `/Storage/versions/forge-${this.version}-${this.loader_version}/forge-${this.version}-${this.loader_version}-installer.jar`);
+			mkdirSync(installerDirPath, { recursive: true });
+			createWriteStream(installerFilePath).write(installer);
+
+			await ((): Promise<void> => {
+				return new Promise((resolve, reject) => {
+					let jar = exec(`jar xvf forge-${this.version}-${this.loader_version}-installer.jar`, { cwd: installerDirPath }, (error, stdout, stderr) => {
+						if (error) {
+							console.log(`error: ${error.message}`);
+							reject(error);
+							return;
+						}
+						if (stdout) {
+							console.log(`stdout: ${stdout}`);
+							return;
+						}
+						if (stderr) {
+							console.log(`stderr: ${stderr}`);
+							reject();
+							return;
+						}
+					});
+
+					jar.on("exit", (code) => {
+						console.log(`Child exited with code ${code}`);
+						if (code == 0) {
+							resolve();
+							return;
+						}
+						reject();
+					});
+				});
+			})();
+
+			let mod_json = JSON.parse(readFileSync(installerDirPath + "/version.json").toString());
+			let forgeInstallJson = JSON.parse(readFileSync(installerDirPath + "/install_profile.json").toString());
+
+			await this.download_libraries(forgeInstallJson.libraries, false);
+
+			let manifest = JSON.parse(readFileSync(Storage.resourcesPath + "/Storage/version_manifest_v2.json").toString());
+			let version = manifest.versions.find((v: any) => v.id == mod_json.inheritsFrom);
+			if (version) {
+				let res = await fetch(version.url);
+				mkdirSync(path.resolve(Storage.resourcesPath + `/Storage/versions/${version.id}/`), { recursive: true });
+				let versionJson = await res.json();
+				createWriteStream(path.resolve(Storage.resourcesPath + `/Storage/versions/${version.id}/${version.id}.json`)).write(JSON.stringify(versionJson));
+
+				if (versionJson.libraries && mod_json.libraries) {
+					versionJson.libraries.push(...mod_json.libraries);
+				}
+
+				if (versionJson.minecraftArguments && mod_json.minecraftArguments) {
+					versionJson.minecraftArguments += " " + mod_json.minecraftArguments;
+				}
+
+				if (versionJson.arguments && mod_json.arguments) {
+					if (mod_json.arguments.game && versionJson.arguments.game) {
+						versionJson.arguments.game.push(...mod_json.arguments.game);
+					}
+					if (mod_json.arguments.jvm && versionJson.arguments.jvm) {
+						versionJson.arguments.jvm.push(...mod_json.arguments.jvm);
+					}
+				}
+
+				versionJson.mainClass = mod_json.mainClass;
+
+				this.version_json = versionJson;
+				this.asset_index = this.version_json.assetIndex.id;
+				if (this.version_json.javaVersion) {
+					this.java_version = this.version_json.javaVersion.majorVersion;
+				} else {
+					this.java_version = 17;
+				}
+				this.main_class = this.version_json.mainClass;
+				this.version_type = this.version_json.type;
+			}
+
+			if (forgeInstallJson.processors) {
+				for (let processor of forgeInstallJson.processors) {
+					if (processor.sides && !(processor.sides || []).includes("client")) {
+						continue;
+					}
+
+					let jarExe = path.resolve(Storage.resourcesPath + "/Storage/libraries/" + pathFromMaven(processor.jar));
+					let jarPath = path.parse(jarExe).dir;
+
+					let classPath = "";
+
+					for (let lib of processor.classpath) {
+						classPath += path.resolve(Storage.resourcesPath + "/Storage/libraries/" + pathFromMaven(lib)) + (process.platform == "win32" ? ";" : ":");
+					}
+
+					classPath += jarExe;
+
+					await ((): Promise<void> => {
+						return new Promise((resolve, reject) => {
+							let jar = exec(`jar xf ${jarExe} META-INF/MANIFEST.MF`, { cwd: jarPath }, (error, stdout, stderr) => {
+								if (error) {
+									console.log(`error: ${error.message}`);
+									reject(error);
+									return;
+								}
+								if (stdout) {
+									console.log(`stdout: ${stdout}`);
+									return;
+								}
+								if (stderr) {
+									console.log(`stderr: ${stderr}`);
+									reject();
+									return;
+								}
+							});
+
+							jar.on("exit", (code) => {
+								console.log(`Child exited with code ${code}`);
+								if (code == 0) {
+									resolve();
+									return;
+								}
+								reject();
+							});
+						});
+					})();
+
+					let manifest = readFileSync(jarPath + "/META-INF/MANIFEST.MF").toString();
+					let mainClassMatch = manifest.match(/[\n\r][ \t]*Main-Class: [ \t]*([^\n\r]*)/);
+					let mainClass = mainClassMatch[0].replace("Main-Class: ", "").replace(/(\r\n|\n|\r)/gm, "");
+
+					const universalPath = forgeInstallJson.libraries.find((v: any) => (v.name || "").startsWith("net.minecraftforge:forge"))?.name;
+
+					const replaceIfPossible = (arg: string) => {
+						const finalArg = arg.replace("{", "").replace("}", "");
+						if (forgeInstallJson.data[finalArg]) {
+							// Handle special case
+							if (finalArg === "BINPATCH") {
+								return `"${path.resolve(Storage.resourcesPath + "/Storage/libraries/" + pathFromMaven(forgeInstallJson.path || universalPath)).replace(".jar", "-clientdata.lzma")}"`;
+							}
+							// Return replaced string
+							return forgeInstallJson.data[finalArg].client;
+						}
+						// Fix forge madness
+						return arg
+							.replace("{SIDE}", `client`)
+							.replace("{ROOT}", `"${path.dirname(installerFilePath)}"`)
+							.replace("{MINECRAFT_JAR}", `"${path.resolve(Storage.resourcesPath + `/Storage/versions/${forgeInstallJson.minecraft}/${forgeInstallJson.minecraft}.jar`)}"`)
+							.replace("{MINECRAFT_VERSION}", `"${path.resolve(Storage.resourcesPath + `/Storage/versions/${version.id}/${version.id}.json`)}"`)
+							.replace("{INSTALLER}", `"${installerFilePath}"`)
+							.replace("{LIBRARY_DIR}", `"${path.resolve(Storage.resourcesPath + "/Storage/libraries/")}"`);
+					};
+
+					const computePathIfPossible = (arg: string) => {
+						if (arg[0] === "[") {
+							return `"${path.resolve(Storage.resourcesPath + "/Storage/libraries/" + pathFromMaven(arg.replace("[", "").replace("]", "")))}"`;
+						}
+						return arg;
+					};
+
+					const args = processor.args.map((arg: string) => replaceIfPossible(arg)).map((arg: string) => computePathIfPossible(arg));
+
+					await ((): Promise<void> => {
+						return new Promise((resolve, reject) => {
+							let jar = exec(`java -cp ${classPath} ${mainClass} ${args.join(" ")}`, { cwd: jarPath }, (error, stdout, stderr) => {
+								if (error) {
+									console.log(`error: ${error.message}`);
+									reject(error);
+									return;
+								}
+								if (stdout) {
+									console.log(`stdout: ${stdout}`);
+									return;
+								}
+								if (stderr) {
+									console.log(`stderr: ${stderr}`);
+									reject();
+									return;
+								}
+							});
+
+							jar.on("exit", (code) => {
+								console.log(`Child exited with code ${code}`);
+								if (code == 0) {
+									resolve();
+									return;
+								}
+								reject();
+							});
+						});
+					})();
+				}
+			}
+			await this.download_assets();
 		}
 	}
 
@@ -266,6 +468,7 @@ export class Instance {
 	}
 
 	async init_data(): Promise<void> {
+		await this.download_version_info();
 		console.log("Init Data");
 		if (this.version_json.downloads && this.version_json.downloads.client && this.version_json.downloads.client.url) {
 			if (!existsSync(Storage.resourcesPath + "/Storage/versions/" + this.version + "/" + this.version + ".jar")) {
@@ -274,55 +477,77 @@ export class Instance {
 		}
 
 		if (this.version_json.libraries) {
-			for (let lib of this.version_json.libraries) {
-				if (!this.useLibrary(lib)) {
-					continue;
-				}
+			await this.download_libraries(this.version_json.libraries);
+		}
+	}
 
-				let jarFile: string = "";
-				let [libDomain, libName, libVersion, libNative] = lib.name.split(":");
-				let jarPath = path.join(...libDomain.split("."), libName, libVersion);
+	async download_libraries(libraries: any, add_to_libraries: boolean = true): Promise<void> {
+		for (let lib of libraries) {
+			if (!this.useLibrary(lib)) {
+				continue;
+			}
 
-				if (libNative == undefined) {
-					if (lib.downloads && lib.downloads.artifact && lib.downloads.artifact.url) {
-						jarFile = libName + "-" + libVersion + ".jar";
+			let jarFile: string = "";
+			let [libDomain, libName, libVersion, libNative] = lib.name.split(":");
+			let jarPath = path.join(...libDomain.split("."), libName, libVersion);
+			jarPath = jarPath.split("@")[0];
 
-						let library: any = {
-							name: lib.name,
-							path: jarPath,
-							file: jarFile,
-						};
-
-						this.libraries.push(library);
-
-						if (!existsSync(Storage.resourcesPath + "/Storage/libraries/" + jarPath + "/" + jarFile)) {
-							await this.download_library(lib.downloads.artifact.url, jarPath, jarFile);
-						}
-					} else if (lib.url) {
-						jarFile = libName + "-" + libVersion + ".jar";
-
-						let library: any = {
-							name: lib.name,
-							path: jarPath,
-							file: jarFile,
-						};
-
-						this.libraries.push(library);
-
-						if (!existsSync(Storage.resourcesPath + "/Storage/libraries/" + jarPath + "/" + jarFile)) {
-							await this.download_library(`${lib.url}/${jarPath}/${jarFile}`, jarPath, jarFile);
-						}
+			if (libNative == undefined) {
+				if (lib.downloads && lib.downloads.artifact && lib.downloads.artifact.url) {
+					jarFile = libName + "-" + libVersion;
+					if (jarFile.includes("@")) {
+						jarFile = jarFile.replace("@", ".");
+					} else {
+						jarFile += ".jar";
 					}
 
-					let native_url = "";
-					if (lib.natives && lib.natives[get_platform()]) {
-						jarFile = libName + "-" + libVersion + "-natives-" + get_platform() + ".jar";
-						if (!lib.downloads.classifiers || !lib.downloads.classifiers["natives-" + get_platform()]) {
-							continue;
-						}
+					if (add_to_libraries) {
+						let library: any = {
+							name: lib.name,
+							path: jarPath,
+							file: jarFile,
+						};
 
-						native_url = lib.downloads.classifiers["natives-" + get_platform()].url;
+						this.libraries.push(library);
+					}
 
+					if (!existsSync(Storage.resourcesPath + "/Storage/libraries/" + jarPath + "/" + jarFile)) {
+						await this.download_library(lib.downloads.artifact.url, jarPath, jarFile);
+					}
+				} else if (lib.url) {
+					jarFile = libName + "-" + libVersion;
+					if (jarFile.includes("@")) {
+						jarFile = jarFile.replace("@", ".");
+					} else {
+						jarFile += ".jar";
+					}
+
+					if (add_to_libraries) {
+						let library: any = {
+							name: lib.name,
+							path: jarPath,
+							file: jarFile,
+						};
+
+						this.libraries.push(library);
+					}
+
+					if (!existsSync(Storage.resourcesPath + "/Storage/libraries/" + jarPath + "/" + jarFile)) {
+						await this.download_library(`${lib.url}/${jarPath}/${jarFile}`, jarPath, jarFile);
+					}
+				}
+
+				let native_url = "";
+				if (lib.natives && lib.natives[get_platform()]) {
+					jarFile = libName + "-" + libVersion + "-natives-" + get_platform();
+
+					if (!lib.downloads.classifiers || !lib.downloads.classifiers["natives-" + get_platform()]) {
+						continue;
+					}
+
+					native_url = lib.downloads.classifiers["natives-" + get_platform()].url;
+
+					if (add_to_libraries) {
 						let native_lib: any = {
 							name: lib.name,
 							path: jarPath,
@@ -330,18 +555,26 @@ export class Instance {
 						};
 
 						this.libraries.push(native_lib);
-
-						if (!existsSync(Storage.resourcesPath + "/Storage/libraries/" + jarPath + "/" + jarFile)) {
-							await this.download_library(native_url, jarPath, jarFile);
-						}
-
-						if (lib.extract) {
-							await this.extract_natives(Storage.resourcesPath + "/Storage/libraries/" + jarPath, jarFile);
-						}
 					}
-				} else {
-					jarFile = libName + "-" + libVersion + "-" + libNative + ".jar";
 
+					if (!existsSync(Storage.resourcesPath + "/Storage/libraries/" + jarPath + "/" + jarFile)) {
+						await this.download_library(native_url, jarPath, jarFile);
+					}
+
+					if (lib.extract) {
+						await this.extract_natives(Storage.resourcesPath + "/Storage/libraries/" + jarPath, jarFile);
+					}
+				}
+			} else {
+				jarFile = libName + "-" + libVersion + "-" + libNative + ".jar";
+
+				let library: any = {
+					name: lib.name,
+					path: jarPath,
+					file: jarFile,
+				};
+
+				if (add_to_libraries) {
 					let library: any = {
 						name: lib.name,
 						path: jarPath,
@@ -349,14 +582,14 @@ export class Instance {
 					};
 
 					this.libraries.push(library);
+				}
 
-					if (!existsSync(Storage.resourcesPath + "/Storage/libraries/" + jarPath + "/" + jarFile)) {
-						await this.download_library(lib.downloads.artifact.url, jarPath, jarFile);
-					}
+				if (!existsSync(Storage.resourcesPath + "/Storage/libraries/" + jarPath + "/" + jarFile)) {
+					await this.download_library(lib.downloads.artifact.url, jarPath, jarFile);
+				}
 
-					if (lib.extract) {
-						await this.extract_natives(Storage.resourcesPath + "/Storage/libraries/" + jarPath, jarFile);
-					}
+				if (lib.extract) {
+					await this.extract_natives(Storage.resourcesPath + "/Storage/libraries/" + jarPath, jarFile);
 				}
 			}
 		}

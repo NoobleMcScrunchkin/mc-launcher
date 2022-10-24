@@ -736,6 +736,8 @@ input:checked+.slider:before {
 }
 
 .range-slider>input {
+    -webkit-appearance: none;
+    appearance: none;
     width: 100%;
     height: var(--thumb-size);
     margin: 0;

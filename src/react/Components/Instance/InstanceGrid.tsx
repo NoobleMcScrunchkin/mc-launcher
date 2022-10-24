@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Instance } from "../../util/minecraft/game/instance";
+import { Instance } from "../../../util/minecraft/game/instance";
 import { InstanceIcon } from "./InstanceIcon";
 const { ipcRenderer } = window.require("electron");
 

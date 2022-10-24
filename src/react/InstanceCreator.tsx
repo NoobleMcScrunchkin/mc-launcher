@@ -62,19 +62,27 @@ export function InstanceCreator() {
 			<div className="instance-creator">
 				<div className="title">Create Instance</div>
 				<div className="input-group top-m-l">
-					<label htmlFor="name">Name</label>
+					<label htmlFor="name" className="input-label">
+						Name
+					</label>
 					<input type="text" name="name" id="name" value={name} onChange={handleNameChange} />
 				</div>
 				<div className="input-group">
-					<label htmlFor="type">Type</label>
+					<label htmlFor="type" className="input-label">
+						Type
+					</label>
 					<input type="text" name="type" id="type" value={type} onChange={handleTypeChange} />
 				</div>
 				<div className="input-group">
-					<label htmlFor="version">Version</label>
+					<label htmlFor="version" className="input-label">
+						Version
+					</label>
 					<input type="text" name="version" id="version" value={version} onChange={handleVersionChange} />
 				</div>
 				<div className="input-group">
-					<label htmlFor="version">ModLoader Version</label>
+					<label htmlFor="version" className="input-label">
+						ModLoader Version
+					</label>
 					<input type="text" name="modLoaderVersion" id="modLoaderVersion" value={modLoaderVersion} onChange={handleModLoaderVersionChange} />
 				</div>
 

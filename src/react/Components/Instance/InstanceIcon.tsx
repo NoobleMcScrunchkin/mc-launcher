@@ -1,10 +1,10 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import { Instance } from "../../util/minecraft/game/instance";
-import { ContextMenu } from "../Components/ContextMenu/ContextMenu";
-import { ContextMenuNavItem } from "../Components/ContextMenu/ContextMenuNavItem";
-import { LoadingIcon } from "../Components/Overlays/LoadingIcon";
-import { PlayIconOverlay } from "../Components/Overlays/PlayIconOverlay";
+import { Instance } from "../../../util/minecraft/game/instance";
+import { ContextMenu } from "../ContextMenu/ContextMenu";
+import { ContextMenuNavItem } from "../ContextMenu/ContextMenuNavItem";
+import { LoadingIcon } from "../Overlays/LoadingIcon";
+import { PlayIconOverlay } from "../Overlays/PlayIconOverlay";
 import LinesEllipsis from "react-lines-ellipsis";
 import responsiveHOC from "react-lines-ellipsis/lib/responsiveHOC";
 const ResponsiveEllipsis = responsiveHOC()(LinesEllipsis);
@@ -56,7 +56,7 @@ export function InstanceIcon(props: any) {
 					</div>
 					<PlayIconOverlay />
 					<ContextMenu title={instance.name}>
-						<ContextMenuNavItem to={"#"} icon={<i className="fa-solid fa-pencil"></i>}>
+						<ContextMenuNavItem to={"/instanceSettings/" + instance.uuid + "/general"} icon={<i className="fa-solid fa-pencil"></i>}>
 							Edit Instance
 						</ContextMenuNavItem>
 						<ContextMenuNavItem icon={<i className="fa-solid fa-screwdriver-wrench"></i>}>Manage Mods</ContextMenuNavItem>

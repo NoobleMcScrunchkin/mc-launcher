@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 const { ipcRenderer } = window.require("electron");
 
 export function UsersBtn(props: any) {
+	const [show, setShow] = React.useState<boolean>(false);
 	const [currentUser, setCurrentUser] = React.useState<User>(null);
 
 	const login = () => {
@@ -16,12 +17,17 @@ export function UsersBtn(props: any) {
 
 		ipcRenderer.addListener("GET_USER", (event, arg) => {
 			setCurrentUser(arg.user);
+			setShow(true);
 		});
 
 		return () => {
 			ipcRenderer.removeAllListeners("GET_USER");
 		};
 	}, []);
+
+	if (!show) {
+		return;
+	}
 
 	return (
 		<>

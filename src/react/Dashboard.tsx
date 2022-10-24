@@ -1,8 +1,8 @@
 import * as React from "react";
-import { InstanceGrid } from "./Instance/InstanceGrid";
+import { InstanceGrid } from "./Components/Instance/InstanceGrid";
 import { Header } from "./Components/Header";
 import { Footer } from "./Components/Footer";
-import { AddInstanceBtn } from "./Instance/AddInstanceBtn";
+import { AddInstanceBtn } from "./Components/Instance/AddInstanceBtn";
 import { UsersBtn } from "./Components/Users/UsersBtn";
 import { SettingsBtn } from "./Components/Settings/SettingsBtn";
 const ipcRenderer = window.require("electron").ipcRenderer;

@@ -143,3 +143,16 @@ ipcMain.on("SET_SETTING", async (event, arg): Promise<void> => {
 ipcMain.handle("GET_SETTING", async (event, arg): Promise<any> => {
 	return Settings.get_key(arg.key);
 });
+
+ipcMain.handle("GET_INSTANCE", async (event, arg): Promise<any> => {
+	return InstanceManager.getInstance(arg.uuid);
+});
+
+ipcMain.on("SET_INSTANCE_SETTING", async (event, arg): Promise<void> => {
+	let instance = InstanceManager.getInstance(arg.uuid);
+	if (!instance) {
+		return;
+	}
+	instance.set_key(arg.key, arg.value);
+	InstanceManager.updateInstance(arg.uuid, instance);
+});

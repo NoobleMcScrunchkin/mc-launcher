@@ -41,6 +41,8 @@ export class Instance {
 	main_class: string = "";
 	version_json: any = {};
 	version_type: string = "release";
+	custom_jvm_args: string = "";
+	jvm_memory: number = 2048;
 
 	constructor(name: string, type: "vanilla" | "fabric" | "forge", version: string, loader_version: string = "") {
 		this.name = name;
@@ -700,5 +702,13 @@ export class Instance {
 		classpath += path.resolve(Storage.resourcesPath + "/Storage/versions/" + this.version + "/" + this.version + ".jar");
 
 		return classpath;
+	}
+
+	get_key(key: string): any {
+		return this[key as keyof typeof this];
+	}
+
+	set_key(key: string, value: any): void {
+		this[key as keyof typeof this] = value;
 	}
 }

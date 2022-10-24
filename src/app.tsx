@@ -8,7 +8,10 @@ import { Users } from "./react/Users";
 import { Log } from "./react/Log";
 import { RootNoFrame } from "./react/RootNoFrame";
 import { Settings } from "./react/Settings";
+import { InstanceSettings } from "./react/InstanceSettings";
 import { GeneralSettings } from "./react/Components/Settings/GeneralSettings";
+import { GeneralInstanceSettings } from "./react/Components/Instance/GeneralInstanceSettings";
+import { JavaInstanceSettings } from "./react/Components/Instance/JavaInstanceSettings";
 
 import "./css/main.css";
 import "./fontawesome/css/all.css";
@@ -24,6 +27,10 @@ root.render(
 					<Route path="users" element={<Users />}></Route>
 					<Route path="settings" element={<Settings />}>
 						<Route path="general" element={<GeneralSettings />}></Route>
+					</Route>
+					<Route path="instanceSettings/:uuid" element={<InstanceSettings />}>
+						<Route path="general" element={<GeneralInstanceSettings />}></Route>
+						<Route path="java" element={<JavaInstanceSettings />}></Route>
 					</Route>
 				</Route>
 				<Route path="/" element={<RootNoFrame />}>

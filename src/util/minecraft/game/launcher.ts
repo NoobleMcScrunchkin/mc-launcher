@@ -6,7 +6,7 @@ import { mkdirSync } from "fs";
 import { Storage } from "../../storage";
 import path from "path";
 
-export async function startGame(instance: Instance, started_callback: () => void = () => {}, stdout_callback: (data: string) => void = (data) => {}, exit_callback: () => void = () => {}): Promise<void> {
+export async function startGame(instance: Instance, started_callback: () => void = () => {}, stdout_callback: (data: string) => void = (data) => {}, exit_callback: () => void = () => {}, error_callback: (e: string) => void = () => {}): Promise<void> {
 	let user: User = UserManager.currentUser;
 
 	try {
@@ -62,6 +62,9 @@ export async function startGame(instance: Instance, started_callback: () => void
 	const javaRuntime = exec(`${process.platform == "win32" ? "&" : ""}${java_path} ${processCallStr}`, { shell: process.platform == "win32" ? "powershell" : undefined, cwd: instance.mc_dir }, (error, stdout, stderr) => {
 		if (error) {
 			console.log(`error: ${error.message}`);
+			var lines = error.message.split("\n");
+			lines.splice(0, 1);
+			error_callback(lines.join("\n"));
 			return;
 		}
 		// if (stderr) {

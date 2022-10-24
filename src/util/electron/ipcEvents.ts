@@ -95,6 +95,9 @@ ipcMain.on("START_INSTANCE", async (event, arg): Promise<void> => {
 					logWindow.close();
 					logWindow = null;
 				}
+			},
+			(e) => {
+				event.sender.send("ERROR", { title: "Error starting game!", description: e });
 			}
 		);
 	} catch (e: any) {

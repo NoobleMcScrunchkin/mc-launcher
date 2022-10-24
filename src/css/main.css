@@ -488,6 +488,7 @@ a {
     padding: 0.5rem;
     background-color: #292929;
     font-size: 1rem;
+    white-space: pre-wrap;
 }
 
 .logs-container {
@@ -735,7 +736,6 @@ input:checked+.slider:before {
 }
 
 .range-slider>input {
-    -webkit-appearance: none;
     width: 100%;
     height: var(--thumb-size);
     margin: 0;

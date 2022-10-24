@@ -631,7 +631,7 @@ input:checked+.slider:before {
     --ticks-color: #eee;
     --step: 1;
     --ticks-count: Calc(var(--max) - var(--min)) / var(--step);
-    --maxTicksAllowed: 64;
+    --maxTicksAllowed: 0;
     --too-many-ticks: Min(1, Max(var(--ticks-count) - var(--maxTicksAllowed), 0));
     --x-step: Max(var(--step), var(--too-many-ticks) * (var(--max) - var(--min)));
     --tickInterval: 100/ ((var(--max) - var(--min)) / var(--step)) * var(--tickEvery, 1);

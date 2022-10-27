@@ -243,6 +243,10 @@ a {
     flex-direction: row;
 }
 
+.input-group.input-group-inline .input-label {
+    align-self: center;
+}
+
 .input-group input, label {
     display: block;
     width: 100%;
@@ -450,6 +454,7 @@ a {
 .head-skin {
     image-rendering: pixelated;
     width: 1.5rem;
+    height: 1.5rem;
     margin-right: 0.5rem;
 }
 
@@ -863,4 +868,19 @@ input:checked+.slider:before {
 .range-slider>input+output::after {
     content: var(--prefix, "") var(--text-value-b) var(--suffix, "");
     font: var(--value-font);
+}
+
+.skeleton {
+    background-color: #888;
+    border-radius: 0.25rem;
+}
+
+.skeleton-text {
+    background-color: #888;
+    border-radius: 0.25rem;
+    height: 0.5rem;
+}
+
+.login-btn .skeleton-text {
+    width: 5rem;
 }

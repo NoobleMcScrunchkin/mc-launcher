@@ -39,7 +39,7 @@ export function InstanceSettings(props: any) {
 		return () => {
 			ipcRenderer.removeAllListeners("SET_RPC");
 		};
-	}, []);
+	}, [instance]);
 
 	return (
 		<div id="main-content">

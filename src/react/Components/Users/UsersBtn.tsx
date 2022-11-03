@@ -27,6 +27,16 @@ export function UsersBtn(props: any) {
 
 	if (!show) {
 		return;
+		return (
+			<>
+				<Link to={"/users"}>
+					<Btn className="login-btn">
+						<div className="head-skin skeleton"></div>
+						<div className="skeleton-text"></div>
+					</Btn>
+				</Link>
+			</>
+		);
 	}
 
 	return (

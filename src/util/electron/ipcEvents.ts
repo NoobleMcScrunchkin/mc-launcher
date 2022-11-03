@@ -82,10 +82,10 @@ ipcMain.on("START_INSTANCE", async (event, arg): Promise<void> => {
 			},
 			(msg: string) => {
 				if (Browser.mainWindow != null) {
-					Browser.mainWindow.webContents.executeJavaScript(`console.log("${msg.replace(/(\r\n|\n|\r)/gm, "")}")`);
+					Browser.mainWindow.webContents.executeJavaScript(`console.log("${msg.replace(/(\r\n|\n|\r)/gm, "").replaceAll('"', '\\"')}")`);
 				}
 				if (logWindow != null) {
-					logWindow.webContents.executeJavaScript(`window.dispatchEvent(new CustomEvent("gamelog", {detail: "${msg.replace(/(\r\n|\n|\r)/gm, "")}"}))`);
+					logWindow.webContents.executeJavaScript(`window.dispatchEvent(new CustomEvent("gamelog", {detail: "${msg.replace(/(\r\n|\n|\r)/gm, "").replaceAll('"', '\\"')}" }));`);
 				}
 			},
 			() => {

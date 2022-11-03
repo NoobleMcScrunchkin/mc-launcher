@@ -1,11 +1,13 @@
-import { readFileSync, mkdirSync, createWriteStream, existsSync, createReadStream } from "fs";
+import { readFileSync, mkdirSync, createWriteStream, existsSync, createReadStream, readdirSync } from "fs";
+import { copySync } from "fs-extra";
 import fetch from "node-fetch";
-import https from "https";
+import { https } from "follow-redirects";
 import path from "path";
 import { v4 } from "uuid";
 import unzipper from "unzipper";
 import { Storage } from "../../storage";
 import { exec } from "child_process";
+import { BrowserWindow } from "electron";
 
 function get_platform() {
 	let platform = process.platform;
@@ -55,8 +57,145 @@ export class Instance {
 	}
 
 	static async create(name: string, type: "vanilla" | "fabric" | "forge", version: string, loader_version: string = ""): Promise<Instance> {
+		// return Instance.create_from_modpack(695245, 4060368);
 		let instance = new Instance(name, type, version, loader_version);
 		await instance.init_data();
+		return instance;
+	}
+
+	static async create_from_modpack(project_id: number, file_id: number): Promise<Instance> {
+		let modpackRes = await fetch(`https://api.curseforge.com/v1/mods/${project_id}/files/${file_id}`, {
+			headers: {
+				"x-api-key": "$2a$10$T8MZffSoJ/6HMP1FAAqJe.YLrpCHttNPSCNU3Rs85Q8BRzgOpd/Ai",
+			},
+		});
+
+		let modpack = await modpackRes.json();
+
+		const download_url = modpack.data.downloadUrl.replaceAll(" ", "%20");
+
+		await (() => {
+			return new Promise<boolean>((resolve, reject) => {
+				https.get(download_url, (res) => {
+					mkdirSync(path.resolve(Storage.resourcesPath + `/Storage/modpacks`), { recursive: true });
+					const dlpath = path.resolve(Storage.resourcesPath + `/Storage/modpacks/${modpack.data.fileName}`);
+					const filePath = createWriteStream(dlpath);
+					res.pipe(filePath);
+					filePath.on("finish", async () => {
+						filePath.close();
+						console.log("Download Completed");
+						resolve(true);
+					});
+				});
+			});
+		})();
+
+		await (() => {
+			return new Promise<boolean>((resolve, reject) => {
+				const readStream = createReadStream(path.resolve(Storage.resourcesPath + `/Storage/modpacks/${modpack.data.fileName}`)).pipe(unzipper.Extract({ path: path.resolve(Storage.resourcesPath + `/Storage/modpacks/${modpack.data.fileName.replace(/\.[^/.]+$/, "")}`) }));
+				readStream.on("close", () => {
+					resolve(true);
+				});
+			});
+		})();
+
+		const modpack_dir = path.resolve(Storage.resourcesPath + `/Storage/modpacks/${modpack.data.fileName.replace(/\.[^/.]+$/, "")}`);
+
+		const modpack_manifest = JSON.parse(readFileSync(modpack_dir + `/manifest.json`).toString());
+
+		const version = modpack_manifest.minecraft.version;
+		const type = modpack_manifest.minecraft.modLoaders[0].id.includes("fabric") ? "fabric" : "forge";
+		const loader_version = modpack_manifest.minecraft.modLoaders[0].id.replace("fabric-", "").replace("forge-", "");
+
+		let instance = new Instance(modpack_manifest.name, type, version, loader_version);
+		await instance.init_data();
+
+		const overrides_dir = modpack_dir + "/" + modpack_manifest.overrides;
+
+		readdirSync(overrides_dir).forEach((file) => {
+			copySync(overrides_dir + `/${file}`, instance.mc_dir + `/${file}`, { overwrite: true });
+		});
+
+		const mods_dir = instance.mc_dir + "/mods";
+		mkdirSync(mods_dir, { recursive: true });
+
+		for (let file of modpack_manifest.files) {
+			await (() => {
+				return new Promise<boolean>(async (resolve, reject) => {
+					let modRes = await fetch(`https://api.curseforge.com/v1/mods/${file.projectID}/files/${file.fileID}`, {
+						headers: {
+							"x-api-key": "$2a$10$T8MZffSoJ/6HMP1FAAqJe.YLrpCHttNPSCNU3Rs85Q8BRzgOpd/Ai",
+						},
+					});
+
+					let mod = await modRes.json();
+
+					if (mod.data.downloadUrl) {
+						https.get(mod.data.downloadUrl.replaceAll(" ", "%20"), (res) => {
+							const dlpath = path.resolve(mods_dir + "/" + mod.data.fileName);
+							const filePath = createWriteStream(dlpath);
+							res.pipe(filePath);
+							console.log("Download Started");
+							filePath.on("finish", async () => {
+								filePath.close();
+								console.log("Download Completed");
+								resolve(true);
+							});
+						});
+					} else {
+						let modInfoRes = await fetch(`https://api.curseforge.com/v1/mods/${file.projectID}`, {
+							headers: {
+								"x-api-key": "$2a$10$T8MZffSoJ/6HMP1FAAqJe.YLrpCHttNPSCNU3Rs85Q8BRzgOpd/Ai",
+							},
+						});
+
+						let modInfo = await modInfoRes.json();
+
+						let download_url = modInfo.data.links.websiteUrl + "/download/" + file.fileID;
+
+						let dl_window = new BrowserWindow({
+							height: 600,
+							width: 800,
+						});
+
+						dl_window.loadURL(download_url);
+
+						await (() => {
+							return new Promise<boolean>(async (resolve, reject) => {
+								dl_window.webContents.session.on("will-download", (event, item, webContents) => {
+									item.setSavePath(path.resolve(mods_dir + "/" + mod.data.fileName));
+
+									item.on("updated", (event, state) => {
+										if (state === "interrupted") {
+											console.log("Download is interrupted but can be resumed");
+										} else if (state === "progressing") {
+											if (item.isPaused()) {
+												console.log("Download is paused");
+											} else {
+												console.log(`Received bytes: ${item.getReceivedBytes()}`);
+											}
+										}
+									});
+									item.once("done", (event, state) => {
+										if (state === "completed") {
+											console.log("Download successfully");
+										} else {
+											console.log(`Download failed: ${state}`);
+										}
+										resolve(true);
+										return;
+									});
+								});
+							});
+						})();
+
+						dl_window.close();
+						resolve(true);
+					}
+				});
+			})();
+		}
+
 		return instance;
 	}
 

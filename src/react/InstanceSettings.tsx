@@ -45,7 +45,7 @@ export function InstanceSettings(props: any) {
 		<div id="main-content">
 			<Header>
 				<div className="info">
-					<div className="header-title">{instance ? instance.name : ""}</div>
+					<div className="header-title">Instance Settings</div>
 				</div>
 				<div className="buttons">
 					<CloseBtn />

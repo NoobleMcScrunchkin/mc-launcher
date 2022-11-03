@@ -90,7 +90,9 @@ a {
 }
 
 #main-content {
-    position: relative;
+    position: absolute;
+    top: 0;
+    left: 0;
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -863,4 +865,23 @@ input:checked+.slider:before {
 .range-slider>input+output::after {
     content: var(--prefix, "") var(--text-value-b) var(--suffix, "");
     font: var(--value-font);
+}
+
+.fade-enter {
+    opacity: 0;
+    z-index: 1;
+    transition: all 100ms ease-out;
+}
+
+.fade-enter.fade-enter-active {
+    opacity: 1;
+}
+
+.fade-exit {
+    opacity: 1;
+    transition: all 100ms ease-out;
+}
+
+.fade-exit.fade-exit-active {
+    opacity: 0;
 }

@@ -3,7 +3,7 @@ import { Outlet } from "react-router-dom";
 import { Popup } from "./Components/Popup";
 const { ipcRenderer } = window.require("electron");
 
-export function Root() {
+export function Root(props: any) {
 	const minimize = () => {
 		ipcRenderer.send("MINIMIZE");
 	};
@@ -32,6 +32,7 @@ export function Root() {
 			</div>
 			<div id="react-root">
 				<Outlet />
+				{props.children}
 				<Popup id="error" title="Error">
 					Default error message
 				</Popup>

@@ -41,7 +41,7 @@ export function GeneralInstanceSettings() {
 			</div>
 			<div className="input-group input-group-inline">
 				<div className="input-label">
-					Minecraft Version ({instance.type} - {instance.loader_version} - {instance.version})
+					Minecraft Version ({instance.type} {instance.type != "vanilla" ? `- ${instance.loader_version}` : ""} - {instance.version})
 				</div>
 				<div className="input">
 					<Btn style={{ fontSize: "1rem", padding: "0.5rem" }}>Change Version</Btn>

@@ -20,7 +20,7 @@ export async function startGame(instance: Instance, started_callback: () => void
 
 	mkdirSync(instance.mc_dir, { recursive: true });
 
-	let processCall = [...jvm_args, `-Xmx${instance.jvm_memory}M`, ...instance.custom_jvm_args.split(" "), instance.main_class, ...mc_args];
+	let processCall = [...jvm_args, `-Xmx${instance.jvm_memory}M`, ...(instance.custom_jvm_args ? instance.custom_jvm_args.split(" ") : []), instance.main_class, ...mc_args];
 
 	if (process.platform == "win32") {
 		processCall.forEach((arg: string, index: number) => {

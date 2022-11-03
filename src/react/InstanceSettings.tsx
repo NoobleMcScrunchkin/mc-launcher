@@ -39,13 +39,13 @@ export function InstanceSettings(props: any) {
 		return () => {
 			ipcRenderer.removeAllListeners("SET_RPC");
 		};
-	}, [instance]);
+	}, []);
 
 	return (
 		<div id="main-content">
 			<Header>
 				<div className="info">
-					<div className="header-title">Instance Settings</div>
+					<div className="header-title">{instance ? instance.name : ""}</div>
 				</div>
 				<div className="buttons">
 					<CloseBtn />

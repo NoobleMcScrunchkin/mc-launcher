@@ -20,8 +20,6 @@ import "./fontawesome/css/all.css";
 function App() {
 	const location = useLocation();
 
-	console.log(location);
-
 	if (location.pathname == "/log") {
 		return (
 			<RootNoFrame>
@@ -33,7 +31,7 @@ function App() {
 	return (
 		<Root>
 			<TransitionGroup component={null}>
-				<CSSTransition key={location.key} classNames="fade" timeout={100}>
+				<CSSTransition key={location.key} classNames="fade" timeout={200}>
 					<Routes location={location}>
 						<Route path="/" element={<Dashboard />}></Route>
 						<Route path="/instanceCreator" element={<InstanceCreator />}></Route>

@@ -873,35 +873,15 @@ input:checked+.slider:before {
 }
 
 .fade-enter {
-    opacity: 0;
-    z-index: 1;
-    transition: all 100ms ease-out;
-}
-
-.fade-enter.fade-enter-active {
-    opacity: 1;
+    z-index: -999;
 }
 
 .fade-exit {
+    z-index: 999;
     opacity: 1;
-    transition: all 100ms ease-out;
+    transition: opacity 200ms ease-out;
 }
 
 .fade-exit.fade-exit-active {
     opacity: 0;
-}
-
-.skeleton {
-    background-color: #888;
-    border-radius: 0.25rem;
-}
-
-.skeleton-text {
-    background-color: #888;
-    border-radius: 0.25rem;
-    height: 0.5rem;
-}
-
-.login-btn .skeleton-text {
-    width: 5rem;
 }

@@ -7,6 +7,7 @@ import { DiscordRPC } from "../discord/rpc";
 import { Settings } from "../settings";
 import { readFileSync } from "fs";
 import { Storage } from "../storage";
+import fetch from "node-fetch";
 
 declare const DASHBOARD_WEBPACK_ENTRY: string;
 
@@ -27,30 +28,42 @@ ipcMain.on("CLOSE", (event, arg): void => {
 });
 
 ipcMain.on("CREATE_INSTANCE", async (event, arg): Promise<void> => {
-	let instance = await InstanceManager.createInstance(arg.name, arg.type, arg.version, arg.modLoaderVersion);
 	let instances = InstanceManager.getInstances();
-	event.sender.send("GET_INSTANCES", { instances });
+	InstanceManager.inprogress = InstanceManager.inprogress + 1;
+	event.sender.send("GET_INSTANCES", { instances, inprogress: InstanceManager.inprogress });
+
+	let instance = await InstanceManager.createInstance(arg.name, arg.type, arg.version, arg.modLoaderVersion);
+	instances = InstanceManager.getInstances();
+	event.sender.send("GET_INSTANCES", { instances, inprogress: InstanceManager.inprogress });
+});
+
+ipcMain.on("DELETE_INSTANCE", async (event, arg): Promise<void> => {
+	InstanceManager.removeInstance(arg.uuid);
+	event.sender.send("GET_INSTANCES", { instances: InstanceManager.getInstances(), inprogress: InstanceManager.inprogress });
 });
 
 ipcMain.on("GET_INSTANCES", async (event, arg): Promise<void> => {
 	let instances = InstanceManager.getInstances();
-	event.sender.send("GET_INSTANCES", { instances });
+	event.sender.send("GET_INSTANCES", { instances, inprogress: InstanceManager.inprogress });
 });
 
 ipcMain.on("START_INSTANCE", async (event, arg): Promise<void> => {
-	InstanceManager.loadInstances();
 	let instance = InstanceManager.getInstance(arg.uuid);
 	if (!instance) {
 		return;
 	}
 	try {
 		let logWindow: BrowserWindow = null;
+
 		startGame(
 			instance,
 			() => {
 				event.sender.send("INSTANCE_STARTED", { uuid: instance.uuid });
 				DiscordRPC.setActivity("Playing Minecraft", instance.name, "rainbow_clouds", "Custom Launcher", "rainbow_clouds", "Playing some Minecraft", true);
 				DiscordRPC.setPlaying(true);
+
+				InstanceManager.front_order(instance.uuid);
+				event.sender.send("GET_INSTANCES", { instances: InstanceManager.instances, inprogress: InstanceManager.inprogress });
 
 				if (Settings.get_key("open_log_on_launch")) {
 					logWindow = new BrowserWindow({
@@ -163,5 +176,23 @@ ipcMain.on("SET_INSTANCE_SETTING", async (event, arg): Promise<void> => {
 });
 
 ipcMain.handle("GET_VERSIONS", async (event, arg): Promise<any> => {
-	return JSON.parse(readFileSync(Storage.resourcesPath + "/Storage/version_manifest_v2.json").toString());
+	if (arg.modloader) {
+		if (arg.modloader == "fabric") {
+			let res = await fetch("https://meta.fabricmc.net/v2/versions/loader");
+			let json = await res.json();
+			return json.map((v: any) => {
+				return { id: v.version };
+			});
+		} else if (arg.modloader == "forge") {
+			let res = await fetch("https://files.minecraftforge.net/net/minecraftforge/forge/maven-metadata.json");
+			let json = await res.json();
+			return json[arg.version]
+				.map((v: any) => {
+					return { id: v.split("-")[1] };
+				})
+				.reverse();
+		}
+	} else {
+		return JSON.parse(readFileSync(Storage.resourcesPath + "/Storage/version_manifest_v2.json").toString()).versions;
+	}
 });

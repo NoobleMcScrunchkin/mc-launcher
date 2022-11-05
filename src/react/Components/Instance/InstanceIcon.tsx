@@ -12,18 +12,23 @@ const { ipcRenderer } = window.require("electron");
 
 export function InstanceIcon(props: any) {
 	const nodeRef = React.useRef();
-	const [loading, setLoading] = React.useState<string>("");
-	const [forceUpdate, setForceUpdate] = React.useState<number>(0);
+	const [loading, setLoading] = React.useState<string>(props.loading ? "loading" : "");
 
 	let instance: Instance = props.instance;
 
 	const startGame = (event: React.MouseEvent<HTMLDivElement>) => {
+		if (!instance) return;
+
 		if (event.button == 0) {
 			if (loading == "" && !(ReactDOM.findDOMNode(nodeRef.current) as HTMLElement).classList.contains("no-hover")) {
 				ipcRenderer.send("START_INSTANCE", { uuid: instance.uuid });
 				setLoading("loading");
 			}
 		}
+	};
+
+	const deleteInstance = () => {
+		ipcRenderer.send("DELETE_INSTANCE", { uuid: instance.uuid });
 	};
 
 	React.useEffect(() => {
@@ -51,20 +56,24 @@ export function InstanceIcon(props: any) {
 		<>
 			<div className={`instance-icon ${loading}`}>
 				<div ref={nodeRef} className={`instance-container hover-border loading-dim hover-text-dim hover-text-blur`} onMouseDown={startGame}>
-					<div className="instance-name">
-						<ResponsiveEllipsis text={instance.name} maxLine="2" ellipsis="..." trimRight basedOn="letters" />
-					</div>
-					<PlayIconOverlay />
-					<ContextMenu title={instance.name}>
-						<ContextMenuNavItem to={"/instanceSettings/" + instance.uuid + "/general"} icon={<i className="fa-solid fa-pencil"></i>}>
-							Edit Instance
-						</ContextMenuNavItem>
-						<ContextMenuNavItem icon={<i className="fa-solid fa-screwdriver-wrench"></i>}>Manage Mods</ContextMenuNavItem>
-						<ContextMenuNavItem icon={<i className="fa-solid fa-folder"></i>}>Open Folder</ContextMenuNavItem>
-						<ContextMenuNavItem icon={<i className="fa-solid fa-trash"></i>} className="hover-text-red">
-							Delete Instance
-						</ContextMenuNavItem>
-					</ContextMenu>
+					{!props.loading && (
+						<>
+							<div className="instance-name">
+								<ResponsiveEllipsis text={instance.name} maxLine="2" ellipsis="..." trimRight basedOn="letters" />
+							</div>
+							<PlayIconOverlay />
+							<ContextMenu title={instance.name}>
+								<ContextMenuNavItem to={"/instanceSettings/" + instance.uuid + "/general"} icon={<i className="fa-solid fa-pencil"></i>}>
+									Edit Instance
+								</ContextMenuNavItem>
+								<ContextMenuNavItem icon={<i className="fa-solid fa-screwdriver-wrench"></i>}>Manage Mods</ContextMenuNavItem>
+								<ContextMenuNavItem icon={<i className="fa-solid fa-folder"></i>}>Open Folder</ContextMenuNavItem>
+								<ContextMenuNavItem icon={<i className="fa-solid fa-trash"></i>} className="hover-text-red" onClick={deleteInstance}>
+									Delete Instance
+								</ContextMenuNavItem>
+							</ContextMenu>
+						</>
+					)}
 				</div>
 				<LoadingIcon />
 			</div>

@@ -8,6 +8,7 @@ import unzipper from "unzipper";
 import { Storage } from "../../storage";
 import { exec } from "child_process";
 import { BrowserWindow } from "electron";
+import { InstanceManager } from "./instanceManager";
 
 function get_platform() {
 	let platform = process.platform;
@@ -45,6 +46,7 @@ export class Instance {
 	version_type: string = "release";
 	custom_jvm_args: string = "";
 	jvm_memory: number = 2048;
+	order: number = null;
 
 	constructor(name: string, type: "vanilla" | "fabric" | "forge", version: string, loader_version: string = "") {
 		this.name = name;
@@ -54,6 +56,7 @@ export class Instance {
 		this.loader_version = loader_version;
 		this.mc_dir = path.resolve(Storage.resourcesPath + "/Storage/instances/" + this.uuid);
 		this.natives_dir = this.mc_dir + "/natives";
+		this.order = InstanceManager.instances.length;
 	}
 
 	static async create(name: string, type: "vanilla" | "fabric" | "forge", version: string, loader_version: string = ""): Promise<Instance> {

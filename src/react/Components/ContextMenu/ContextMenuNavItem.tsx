@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 export function ContextMenuNavItem(props: any) {
 	const getListItem = () => {
 		return (
-			<div className={"context-menu-item hover-text" + (props.className ? ` ${props.className}` : "")}>
+			<div className={"context-menu-item hover-text" + (props.className ? ` ${props.className}` : "")} onClick={props.onClick}>
 				<div className="context-menu-item-icon">{props.icon}</div>
 				<div className="context-menu-item-desc">{props.children}</div>
 			</div>

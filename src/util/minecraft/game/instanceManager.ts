@@ -1,12 +1,13 @@
 import { Instance } from "./instance";
 import https from "https";
-import { existsSync, readFileSync, mkdirSync, writeFileSync, createWriteStream } from "fs";
+import { existsSync, readFileSync, mkdirSync, writeFileSync, createWriteStream, rmSync } from "fs";
 import { Storage } from "../../storage";
 
 export class InstanceManager {
 	static instances: Array<Instance> = [];
 	static instances_path: string = Storage.resourcesPath + "/Storage/instances/";
 	static json_path: string = this.instances_path + "/instances.json";
+	static inprogress: number = 0;
 
 	static update_versions(): Promise<void> {
 		return new Promise((resolve, reject) => {
@@ -25,14 +26,24 @@ export class InstanceManager {
 	}
 
 	static loadInstances(): void {
+		let not_ordered = false;
 		if (existsSync(this.json_path)) {
 			let json = JSON.parse(readFileSync(this.json_path).toString());
 			json.forEach((instance: any) => {
 				if (!this.instances.find((i) => i.uuid == instance.uuid)) {
-					this.instances.push(Object.setPrototypeOf(instance, Instance.prototype));
+					let instanceObj = Object.setPrototypeOf(instance, Instance.prototype);
+					not_ordered = not_ordered || instanceObj.order == null;
+					this.instances.push(instanceObj);
 				}
 			});
 		}
+
+		if (not_ordered) {
+			this.instances.forEach((instance, i) => {
+				instance.order = i;
+			});
+		}
+
 		this.saveInstances();
 	}
 
@@ -44,6 +55,7 @@ export class InstanceManager {
 
 	static async createInstance(name: string, type: "vanilla" | "fabric" | "forge", version: string, loader_version: string = ""): Promise<Instance> {
 		let instance = await Instance.create(name, type, version, loader_version);
+		InstanceManager.inprogress--;
 		this.addInstance(instance);
 		return instance;
 	}
@@ -56,6 +68,21 @@ export class InstanceManager {
 	static removeInstance(uuid: string): void {
 		let index = this.instances.findIndex((i) => i.uuid == uuid);
 		this.instances.splice(index, 1);
+
+		let instances = this.instances;
+
+		instances.sort((a: Instance, b: Instance) => {
+			return a.order > b.order ? 1 : -1;
+		});
+
+		instances.forEach((i, index) => {
+			i.order = index;
+		});
+
+		this.instances = instances;
+
+		rmSync(`${Storage.resourcesPath}/Storage/instances/${uuid}`, { recursive: true, force: true });
+
 		this.saveInstances();
 	}
 
@@ -70,7 +97,13 @@ export class InstanceManager {
 	}
 
 	static getInstances(): Array<any> {
-		return this.instances.map((i) => {
+		let instances = this.instances;
+
+		instances.sort((a: Instance, b: Instance) => {
+			return a.order < b.order ? 1 : -1;
+		});
+
+		return instances.map((i) => {
 			return {
 				name: i.name,
 				uuid: i.uuid,
@@ -78,5 +111,30 @@ export class InstanceManager {
 				version: i.version,
 			};
 		});
+	}
+
+	static front_order(uuid: string) {
+		let instances = InstanceManager.instances;
+
+		instances.sort((a: Instance, b: Instance) => {
+			return a.order < b.order ? 1 : -1;
+		});
+
+		instances.forEach((instance, index) => {
+			instance.order = index + 1;
+		});
+
+		instances.find((i) => i.uuid == uuid).order = 0;
+
+		instances.sort((a: Instance, b: Instance) => {
+			return a.order < b.order ? 1 : -1;
+		});
+
+		instances.forEach((instance, index) => {
+			instance.order = index;
+		});
+
+		InstanceManager.instances = instances.reverse();
+		InstanceManager.saveInstances();
 	}
 }

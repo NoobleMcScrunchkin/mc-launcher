@@ -225,6 +225,7 @@ a {
 .title {
     font-size: 2.5rem;
     text-align: center;
+    width: 100%;
 }
 
 .input-group {
@@ -423,6 +424,7 @@ a {
     flex-direction: row;
     position: relative;
     height: 2.5rem;
+    cursor: pointer;
 }
 
 .context-menu-item-icon {
@@ -921,8 +923,8 @@ input:checked+.slider:before {
     width: 100%;
     height: 100%;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    grid-template-rows: repeat(auto-fill, minmax(150px, 1fr));
+    grid-template-columns: repeat(2, minmax(150px, 1fr));
+    grid-template-rows: repeat(2, minmax(150px, 1fr));
     grid-auto-rows: max-content;
     gap: 16px;
     overflow-y: auto;
@@ -953,4 +955,11 @@ input:checked+.slider:before {
 
 .no-bg {
     background-color: transparent !important;
+}
+
+.step {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }

@@ -5,6 +5,8 @@ import { startGame } from "../minecraft/game/launcher";
 import { Browser } from "./browser";
 import { DiscordRPC } from "../discord/rpc";
 import { Settings } from "../settings";
+import { readFileSync } from "fs";
+import { Storage } from "../storage";
 
 declare const DASHBOARD_WEBPACK_ENTRY: string;
 
@@ -158,4 +160,8 @@ ipcMain.on("SET_INSTANCE_SETTING", async (event, arg): Promise<void> => {
 	}
 	instance.set_key(arg.key, arg.value);
 	InstanceManager.updateInstance(arg.uuid, instance);
+});
+
+ipcMain.handle("GET_VERSIONS", async (event, arg): Promise<any> => {
+	return JSON.parse(readFileSync(Storage.resourcesPath + "/Storage/version_manifest_v2.json").toString());
 });

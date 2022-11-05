@@ -57,7 +57,7 @@ export class Instance {
 	}
 
 	static async create(name: string, type: "vanilla" | "fabric" | "forge", version: string, loader_version: string = ""): Promise<Instance> {
-		// return Instance.create_from_modpack(695245, 4060368);
+		// return Instance.create_from_modpack(695245, 4062358);
 		let instance = new Instance(name, type, version, loader_version);
 		await instance.init_data();
 		return instance;

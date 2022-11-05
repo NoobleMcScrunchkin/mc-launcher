@@ -97,6 +97,7 @@ a {
     flex-direction: column;
     height: 100%;
     width: 100%;
+    background-color: #222;
 }
 
 #header, #footer {
@@ -218,21 +219,13 @@ a {
     right: 0.25rem;
     font-size: 1.5rem;
     cursor: pointer;
-}
-
-.instance-creator {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    height: 100%;
-    width: 100%;
+    z-index: 9999;
 }
 
 .title {
     font-size: 2.5rem;
+    text-align: center;
 }
-
 
 .input-group {
     margin-top: 0.5rem;
@@ -884,4 +877,80 @@ input:checked+.slider:before {
 
 .fade-exit.fade-exit-active {
     opacity: 0;
+}
+
+.instance-creator {
+    position: absolute;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+    background-color: #222;
+}
+
+.instance-creator>div {
+    width: 50%;
+    height: 100%;
+    padding: 2.5rem 1rem;
+    display: flex;
+    align-items: center;
+    align-self: center;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.instance-creator input[type=radio] {
+    display: none;
+}
+
+.instance-creator .block-radio-container .block-radio>div {
+    height: 100%;
+    background-color: #292929;
+    border-radius: 0.25rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+    cursor: pointer;
+}
+
+.instance-creator .block-radio-container {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    grid-template-rows: repeat(auto-fill, minmax(150px, 1fr));
+    grid-auto-rows: max-content;
+    gap: 16px;
+    overflow-y: auto;
+    padding: 1rem;
+}
+
+.instance-creator .block-radio-container .block-radio input:checked+div {
+    border: 2px solid white;
+    color: white;
+}
+
+.instance-creator .block-radio-container .block-radio>div .label {
+    font-size: 1.5rem;
+}
+
+.instance-creator .block-radio-container .block-radio>div .icon {
+    font-size: 4rem;
+}
+
+.back-btn {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    font-size: 1.5rem;
+    cursor: pointer;
+    z-index: 9999;
+}
+
+.no-bg {
+    background-color: transparent !important;
 }

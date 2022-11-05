@@ -1,32 +1,148 @@
 import * as React from "react";
 import { CloseBtn } from "./Components/Buttons/CloseBtn";
 import { Btn } from "./Components/Buttons/Btn";
+import { TransitionGroup, CSSTransition } from "react-transition-group";
 import { useNavigate } from "react-router-dom";
 const ipcRenderer = window.require("electron").ipcRenderer;
+
+function BackBtn(props: any) {
+	return (
+		<div className="back-btn hover-text" onClick={props.onClick}>
+			<i className="fa-solid fa-angle-left"></i>
+		</div>
+	);
+}
+
+function StepOne(props: any) {
+	return (
+		<>
+			<div className="step-title">
+				<div className="title">Select Instance Type</div>
+			</div>
+			<div className="step">
+				<div className="block-radio-container">
+					<label htmlFor="vanilla" className="block-radio">
+						<input
+							type="radio"
+							name="type"
+							id="vanilla"
+							value="vanilla"
+							checked={props.type == "vanilla"}
+							onChange={(e) => {
+								props.setType(e.target.value);
+							}}
+						/>
+						<div
+							className="hover-text hover-border"
+							onClick={() => {
+								props.setStep(props.step + 1);
+							}}>
+							<div className="icon">
+								<i className="fa-solid fa-cube"></i>
+							</div>
+							<div className="label">Vanilla</div>
+						</div>
+					</label>
+					<label htmlFor="fabric" className="block-radio">
+						<input
+							type="radio"
+							name="type"
+							id="fabric"
+							value="fabric"
+							checked={props.type == "fabric"}
+							onChange={(e) => {
+								props.setType(e.target.value);
+							}}
+						/>
+						<div
+							className="hover-text hover-border"
+							onClick={() => {
+								props.setStep(props.step + 1);
+							}}>
+							<div className="icon">
+								<i className="fa-solid fa-scroll"></i>
+							</div>
+							<div className="label">Fabric</div>
+						</div>
+					</label>
+					<label htmlFor="forge" className="block-radio">
+						<input
+							type="radio"
+							name="type"
+							id="forge"
+							value="forge"
+							checked={props.type == "forge"}
+							onChange={(e) => {
+								props.setType(e.target.value);
+							}}
+						/>
+						<div
+							className="hover-text hover-border"
+							onClick={() => {
+								props.setStep(props.step + 1);
+							}}>
+							<div className="icon">
+								<i className="fa-solid fa-hammer"></i>
+							</div>
+							<div className="label">Forge</div>
+						</div>
+					</label>
+				</div>
+			</div>
+		</>
+	);
+}
+
+function StepTwo(props: any) {
+	const [versions, setVersions] = React.useState<any>({});
+
+	React.useEffect(() => {
+		(async () => {
+			setVersions(await ipcRenderer.invoke("GET_VERSIONS"));
+		})();
+	}, []);
+
+	return (
+		<>
+			<div className="step-title">
+				<div className="title">Select Minecraft Version</div>
+			</div>
+			<div className="step">
+				<select
+					name="version"
+					id="version"
+					value={props.version}
+					onChange={(e) => {
+						props.setVersion(e.target.value);
+						if (!e.target.value) return;
+						props.setStep(props.step + 1);
+					}}>
+					<option value="">Select a version...</option>
+					{versions.versions
+						? versions.versions.map((v: any) => {
+								return (
+									<option key={v.id} value={v.id}>
+										{v.id}
+									</option>
+								);
+						  })
+						: null}
+				</select>
+			</div>
+		</>
+	);
+}
 
 export function InstanceCreator() {
 	const navigate = useNavigate();
 
-	const [name, setName] = React.useState("");
-	const [type, setType] = React.useState("vanilla");
-	const [version, setVersion] = React.useState("");
-	const [modLoaderVersion, setModLoaderVersion] = React.useState("");
+	const [step, setStep] = React.useState<number>(0);
 
-	const handleNameChange = (event: any) => {
-		setName(event.target.value);
-	};
-
-	const handleTypeChange = (event: any) => {
-		setType(event.target.value);
-	};
-
-	const handleVersionChange = (event: any) => {
-		setVersion(event.target.value);
-	};
-
-	const handleModLoaderVersionChange = (event: any) => {
-		setModLoaderVersion(event.target.value);
-	};
+	const [type, setType] = React.useState<string>("");
+	const [version, setVersion] = React.useState<string>("");
+	const [name, setName] = React.useState<string>("");
+	const [modLoaderVersion, setModLoaderVersion] = React.useState<string>("");
+	const steps = [<StepOne step={step} setStep={setStep} type={type} setType={setType} />, <StepTwo step={step} setStep={setStep} version={version} setVersion={setVersion} />];
 
 	const createInstance = () => {
 		ipcRenderer.send("CREATE_INSTANCE", { name, type, version, modLoaderVersion });
@@ -57,39 +173,14 @@ export function InstanceCreator() {
 	}, []);
 
 	return (
-		<div id="main-content">
+		<div id="main-content" className="no-bg">
 			<CloseBtn />
-			<div className="instance-creator">
-				<div className="title">Create Instance</div>
-				<div className="input-group top-m-l">
-					<label htmlFor="name" className="input-label">
-						Name
-					</label>
-					<input type="text" name="name" id="name" value={name} onChange={handleNameChange} />
-				</div>
-				<div className="input-group">
-					<label htmlFor="type" className="input-label">
-						Type
-					</label>
-					<input type="text" name="type" id="type" value={type} onChange={handleTypeChange} />
-				</div>
-				<div className="input-group">
-					<label htmlFor="version" className="input-label">
-						Version
-					</label>
-					<input type="text" name="version" id="version" value={version} onChange={handleVersionChange} />
-				</div>
-				<div className="input-group">
-					<label htmlFor="version" className="input-label">
-						ModLoader Version
-					</label>
-					<input type="text" name="modLoaderVersion" id="modLoaderVersion" value={modLoaderVersion} onChange={handleModLoaderVersionChange} />
-				</div>
-
-				<Btn style={{ marginTop: "1rem" }} onClick={createInstance}>
-					Create
-				</Btn>
-			</div>
+			{step != 0 ? <BackBtn onClick={() => setStep(step - 1)} /> : null}
+			<TransitionGroup component={null}>
+				<CSSTransition key={step} classNames="fade" timeout={200}>
+					<div className="instance-creator">{steps[step]}</div>
+				</CSSTransition>
+			</TransitionGroup>
 		</div>
 	);
 }

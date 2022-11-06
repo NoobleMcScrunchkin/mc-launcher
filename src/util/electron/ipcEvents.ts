@@ -196,3 +196,13 @@ ipcMain.handle("GET_VERSIONS", async (event, arg): Promise<any> => {
 		return JSON.parse(readFileSync(Storage.resourcesPath + "/Storage/version_manifest_v2.json").toString()).versions;
 	}
 });
+
+ipcMain.handle("GET_MODPACKS", async (event, arg): Promise<any> => {
+	let res = await fetch(`https://api.curseforge.com/v1/mods/search?gameId=432&categoryId=0&pageSize=40&index=${arg.page * 40 || 0}&sortField=1&sortOrder=desc&gameVersion=&classId=4471&searchFilter=${arg.search || ""}`, {
+		headers: {
+			"x-api-key": "$2a$10$T8MZffSoJ/6HMP1FAAqJe.YLrpCHttNPSCNU3Rs85Q8BRzgOpd/Ai",
+		},
+	});
+	let json = await res.json();
+	return json.data;
+});

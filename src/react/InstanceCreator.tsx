@@ -203,6 +203,30 @@ function ModloaderVersionStep(props: any) {
 	);
 }
 
+function ListModpacks(props: any) {
+	const [packs, setPacks] = React.useState<Array<any>>([]);
+
+	React.useEffect(() => {
+		props.setProject(null);
+		props.setFile(null);
+
+		(async () => {
+			setPacks(await ipcRenderer.invoke("GET_MODPACKS", {}));
+			console.log(packs);
+		})();
+	}, []);
+
+	return (
+		<div className="modpacks-container-list">
+			<div className="modpack-list">
+				{packs.map((p, i) => {
+					return <div key={i}>{p.name}</div>;
+				})}
+			</div>
+		</div>
+	);
+}
+
 function NameStep(props: any) {
 	return (
 		<>
@@ -227,6 +251,8 @@ export function InstanceCreator() {
 	const [step, setStep] = React.useState<number>(0);
 	const [type, setType] = React.useState<string>("");
 	const [version, setVersion] = React.useState<string>("");
+	const [project, setProject] = React.useState<number>(null);
+	const [file, setFile] = React.useState<number>(null);
 	const [name, setName] = React.useState<string>("");
 	const [modLoaderVersion, setModLoaderVersion] = React.useState<string>("");
 
@@ -242,7 +268,7 @@ export function InstanceCreator() {
 		<ModloaderVersionStep step={step} setStep={setStep} modLoaderVersion={modLoaderVersion} setModLoaderVersion={setModLoaderVersion} version={version} type={type} />,
 		<NameStep step={step} setStep={setStep} name={name} setName={setName} createInstance={createInstance} />,
 	];
-	const modpack_steps = [<TypeStep step={step} setStep={setStep} type={type} setType={setType} />, <VersionStep step={step} setStep={setStep} version={version} setVersion={setVersion} />, <NameStep step={step} setStep={setStep} name={name} setName={setName} createInstance={createInstance} />];
+	const modpack_steps = [<TypeStep step={step} setStep={setStep} type={type} setType={setType} />, <ListModpacks step={step} setStep={setStep} setProject={setProject} setFile={setFile} />, <NameStep step={step} setStep={setStep} name={name} setName={setName} createInstance={createInstance} />];
 
 	const setRPC = () => {
 		ipcRenderer.send("SET_RPC", {

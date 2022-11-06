@@ -963,3 +963,15 @@ input:checked+.slider:before {
     justify-content: center;
     align-items: center;
 }
+
+.modpacks-container-list {
+    width: 100% !important;
+    display: flex;
+    flex-direction: column;
+}
+
+.modpack-list {
+    flex-grow: 1;
+    width: 100%;
+    overflow-y: auto;
+}

@@ -4,7 +4,7 @@ import { Btn } from "../Buttons/Btn";
 const ipcRenderer = window.require("electron").ipcRenderer;
 
 export function GeneralInstanceSettings() {
-	const { instance } = useInstance();
+	const { instance, setInstance } = useInstance();
 	const [show, setShow] = React.useState<boolean>(false);
 	const [instanceName, setInstanceName] = React.useState<string>();
 
@@ -35,6 +35,9 @@ export function GeneralInstanceSettings() {
 					value={instanceName}
 					onChange={(e) => {
 						setInstanceName(e.target.value);
+						let newInstance = instance;
+						newInstance.name = e.target.value;
+						setInstance(newInstance);
 						ipcRenderer.send("SET_INSTANCE_SETTING", { uuid: instance.uuid, key: "name", value: e.target.value });
 					}}
 				/>

@@ -6,7 +6,7 @@ import { Outlet, useOutletContext, useLocation, useParams } from "react-router-d
 import { Instance } from "../util/minecraft/game/instance";
 const ipcRenderer = window.require("electron").ipcRenderer;
 
-type ContextType = { instance: Instance | null };
+type ContextType = { instance: Instance | null; setInstance: React.Dispatch<React.SetStateAction<Instance>> | null };
 
 export function InstanceSettings(props: any) {
 	const location = useLocation();
@@ -39,7 +39,7 @@ export function InstanceSettings(props: any) {
 		return () => {
 			ipcRenderer.removeAllListeners("SET_RPC");
 		};
-	}, []);
+	}, [instance]);
 
 	return (
 		<div id="main-content">
@@ -54,7 +54,7 @@ export function InstanceSettings(props: any) {
 			<div className="settings-container">
 				<InstanceSettingsSidebar currentPage={locationStr} uuid={instance ? instance.uuid : ""} />
 				<div className="settings-content">
-					<Outlet context={{ instance }} />
+					<Outlet context={{ instance, setInstance }} />
 				</div>
 			</div>
 		</div>

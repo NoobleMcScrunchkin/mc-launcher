@@ -9,6 +9,7 @@ import { Storage } from "../../storage";
 import { exec } from "child_process";
 import { BrowserWindow } from "electron";
 import { InstanceManager } from "./instanceManager";
+import * as semver from "semver";
 
 function get_platform() {
 	let platform = process.platform;
@@ -37,7 +38,7 @@ export class Instance {
 	loader_version: string = "";
 	mc_dir: string = "";
 	natives_dir: string = "";
-	libraries: Array<String> = [];
+	libraries: Array<any> = [];
 	asset_index: string = "";
 	assets_dir: string = "";
 	java_version: number = 0;
@@ -48,7 +49,7 @@ export class Instance {
 	jvm_memory: number = 2048;
 	order: number = null;
 
-	constructor(name: string, type: "vanilla" | "fabric" | "forge", version: string, loader_version: string = "") {
+	constructor(name: string, type: string, version: string, loader_version: string = "") {
 		this.name = name;
 		this.uuid = v4();
 		this.type = type;
@@ -60,13 +61,12 @@ export class Instance {
 	}
 
 	static async create(name: string, type: "vanilla" | "fabric" | "forge", version: string, loader_version: string = ""): Promise<Instance> {
-		// return Instance.create_from_modpack(695245, 4062358);
 		let instance = new Instance(name, type, version, loader_version);
 		await instance.init_data();
 		return instance;
 	}
 
-	static async create_from_modpack(project_id: number, file_id: number): Promise<Instance> {
+	static async create_from_modpack(name: string, project_id: number, file_id: number): Promise<Instance> {
 		let modpackRes = await fetch(`https://api.curseforge.com/v1/mods/${project_id}/files/${file_id}`, {
 			headers: {
 				"x-api-key": "$2a$10$T8MZffSoJ/6HMP1FAAqJe.YLrpCHttNPSCNU3Rs85Q8BRzgOpd/Ai",
@@ -93,113 +93,150 @@ export class Instance {
 			});
 		})();
 
-		await (() => {
-			return new Promise<boolean>((resolve, reject) => {
-				const readStream = createReadStream(path.resolve(Storage.resourcesPath + `/Storage/modpacks/${modpack.data.fileName}`)).pipe(unzipper.Extract({ path: path.resolve(Storage.resourcesPath + `/Storage/modpacks/${modpack.data.fileName.replace(/\.[^/.]+$/, "")}`) }));
-				readStream.on("close", () => {
-					resolve(true);
-				});
-			});
-		})();
-
-		const modpack_dir = path.resolve(Storage.resourcesPath + `/Storage/modpacks/${modpack.data.fileName.replace(/\.[^/.]+$/, "")}`);
-
-		const modpack_manifest = JSON.parse(readFileSync(modpack_dir + `/manifest.json`).toString());
-
-		const version = modpack_manifest.minecraft.version;
-		const type = modpack_manifest.minecraft.modLoaders[0].id.includes("fabric") ? "fabric" : "forge";
-		const loader_version = modpack_manifest.minecraft.modLoaders[0].id.replace("fabric-", "").replace("forge-", "");
-
-		let instance = new Instance(modpack_manifest.name, type, version, loader_version);
-		await instance.init_data();
-
-		const overrides_dir = modpack_dir + "/" + modpack_manifest.overrides;
-
-		readdirSync(overrides_dir).forEach((file) => {
-			copySync(overrides_dir + `/${file}`, instance.mc_dir + `/${file}`, { overwrite: true });
-		});
-
-		const mods_dir = instance.mc_dir + "/mods";
-		mkdirSync(mods_dir, { recursive: true });
-
-		for (let file of modpack_manifest.files) {
+		if (modpack.data.fileName.endsWith(".zip")) {
 			await (() => {
-				return new Promise<boolean>(async (resolve, reject) => {
-					let modRes = await fetch(`https://api.curseforge.com/v1/mods/${file.projectID}/files/${file.fileID}`, {
-						headers: {
-							"x-api-key": "$2a$10$T8MZffSoJ/6HMP1FAAqJe.YLrpCHttNPSCNU3Rs85Q8BRzgOpd/Ai",
-						},
+				return new Promise<boolean>((resolve, reject) => {
+					const readStream = createReadStream(path.resolve(Storage.resourcesPath + `/Storage/modpacks/${modpack.data.fileName}`)).pipe(unzipper.Extract({ path: path.resolve(Storage.resourcesPath + `/Storage/modpacks/${modpack.data.fileName.replace(/\.[^/.]+$/, "")}`) }));
+					readStream.on("close", () => {
+						resolve(true);
 					});
+				});
+			})();
 
-					let mod = await modRes.json();
+			const modpack_dir = path.resolve(Storage.resourcesPath + `/Storage/modpacks/${modpack.data.fileName.replace(/\.[^/.]+$/, "")}`);
 
-					if (mod.data.downloadUrl) {
-						https.get(mod.data.downloadUrl.replaceAll(" ", "%20"), (res) => {
-							const dlpath = path.resolve(mods_dir + "/" + mod.data.fileName);
-							const filePath = createWriteStream(dlpath);
-							res.pipe(filePath);
-							console.log("Download Started");
-							filePath.on("finish", async () => {
-								filePath.close();
-								console.log("Download Completed");
-								resolve(true);
-							});
-						});
-					} else {
-						let modInfoRes = await fetch(`https://api.curseforge.com/v1/mods/${file.projectID}`, {
+			const modpack_manifest = JSON.parse(readFileSync(modpack_dir + `/manifest.json`).toString());
+
+			const version = modpack_manifest.minecraft.version;
+			const type = modpack_manifest.minecraft.modLoaders[0].id.includes("fabric") ? "fabric" : "forge";
+			const loader_version = modpack_manifest.minecraft.modLoaders[0].id.replace("fabric-", "").replace("forge-", "");
+
+			let instance = new Instance(name, type, version, loader_version);
+			await instance.init_data();
+
+			const overrides_dir = modpack_dir + "/" + modpack_manifest.overrides;
+
+			readdirSync(overrides_dir).forEach((file) => {
+				copySync(overrides_dir + `/${file}`, instance.mc_dir + `/${file}`, { overwrite: true });
+			});
+
+			const mods_dir = instance.mc_dir + "/mods";
+			mkdirSync(mods_dir, { recursive: true });
+
+			for (let file of modpack_manifest.files) {
+				await (() => {
+					return new Promise<boolean>(async (resolve, reject) => {
+						let modRes = await fetch(`https://api.curseforge.com/v1/mods/${file.projectID}/files/${file.fileID}`, {
 							headers: {
 								"x-api-key": "$2a$10$T8MZffSoJ/6HMP1FAAqJe.YLrpCHttNPSCNU3Rs85Q8BRzgOpd/Ai",
 							},
 						});
 
-						let modInfo = await modInfoRes.json();
+						let mod = await modRes.json();
 
-						let download_url = modInfo.data.links.websiteUrl + "/download/" + file.fileID;
-
-						let dl_window = new BrowserWindow({
-							height: 600,
-							width: 800,
-						});
-
-						dl_window.loadURL(download_url);
-
-						await (() => {
-							return new Promise<boolean>(async (resolve, reject) => {
-								dl_window.webContents.session.on("will-download", (event, item, webContents) => {
-									item.setSavePath(path.resolve(mods_dir + "/" + mod.data.fileName));
-
-									item.on("updated", (event, state) => {
-										if (state === "interrupted") {
-											console.log("Download is interrupted but can be resumed");
-										} else if (state === "progressing") {
-											if (item.isPaused()) {
-												console.log("Download is paused");
-											} else {
-												console.log(`Received bytes: ${item.getReceivedBytes()}`);
-											}
-										}
-									});
-									item.once("done", (event, state) => {
-										if (state === "completed") {
-											console.log("Download successfully");
-										} else {
-											console.log(`Download failed: ${state}`);
-										}
-										resolve(true);
-										return;
-									});
+						if (mod.data.downloadUrl) {
+							https.get(mod.data.downloadUrl.replaceAll(" ", "%20"), (res) => {
+								const dlpath = path.resolve(mods_dir + "/" + mod.data.fileName);
+								const filePath = createWriteStream(dlpath);
+								res.pipe(filePath);
+								console.log("Download Started");
+								filePath.on("finish", async () => {
+									filePath.close();
+									console.log("Download Completed");
+									resolve(true);
 								});
 							});
-						})();
+						} else {
+							let modInfoRes = await fetch(`https://api.curseforge.com/v1/mods/${file.projectID}`, {
+								headers: {
+									"x-api-key": "$2a$10$T8MZffSoJ/6HMP1FAAqJe.YLrpCHttNPSCNU3Rs85Q8BRzgOpd/Ai",
+								},
+							});
 
-						dl_window.close();
-						resolve(true);
-					}
+							let modInfo = await modInfoRes.json();
+
+							let download_url = modInfo.data.links.websiteUrl + "/download/" + file.fileID;
+
+							let dl_window = new BrowserWindow({
+								height: 600,
+								width: 800,
+							});
+
+							dl_window.loadURL(download_url);
+
+							await (() => {
+								return new Promise<boolean>(async (resolve, reject) => {
+									dl_window.webContents.session.on("will-download", (event, item, webContents) => {
+										item.setSavePath(path.resolve(mods_dir + "/" + mod.data.fileName));
+
+										item.on("updated", (event, state) => {
+											if (state === "interrupted") {
+												console.log("Download is interrupted but can be resumed");
+											} else if (state === "progressing") {
+												if (item.isPaused()) {
+													console.log("Download is paused");
+												} else {
+													console.log(`Received bytes: ${item.getReceivedBytes()}`);
+												}
+											}
+										});
+										item.once("done", (event, state) => {
+											if (state === "completed") {
+												console.log("Download successfully");
+											} else {
+												console.log(`Download failed: ${state}`);
+											}
+											resolve(true);
+											return;
+										});
+									});
+								});
+							})();
+
+							dl_window.close();
+							resolve(true);
+						}
+					});
+				})();
+			}
+
+			return instance;
+		} else if (modpack.data.fileName.endsWith(".jar")) {
+			let type = "vanilla";
+			let version = "";
+			let loader_version = "";
+
+			modpack.data.gameVersions.forEach((v: string) => {
+				if (!isNaN(parseInt(v[0]))) {
+					version = v;
+				} else {
+					type = v.toLowerCase();
+				}
+			});
+
+			if (type == "fabric") {
+				let res = await fetch("https://meta.fabricmc.net/v2/versions/loader");
+				let json = await res.json();
+				json = json.map((v: any) => {
+					return v.version;
 				});
-			})();
-		}
+				loader_version = json[0];
+			} else if (type == "forge") {
+				let res = await fetch("https://files.minecraftforge.net/net/minecraftforge/forge/maven-metadata.json");
+				let modpackVersionsObj = await res.json();
+				loader_version = modpackVersionsObj[version].reverse()[0].split("-")[1];
+			}
 
-		return instance;
+			let instance = new Instance(name, type, version, loader_version);
+			await instance.init_data();
+
+			const mods_dir = instance.mc_dir + "/mods";
+			mkdirSync(mods_dir, { recursive: true });
+
+			copySync(path.resolve(Storage.resourcesPath + `/Storage/modpacks/${modpack.data.fileName}`), mods_dir);
+
+			return instance;
+		}
 	}
 
 	async download_version_info(): Promise<void> {
@@ -222,7 +259,7 @@ export class Instance {
 				}
 
 				if (versionJson.minecraftArguments && mod_json.minecraftArguments) {
-					versionJson.minecraftArguments += " " + mod_json.minecraftArguments;
+					versionJson.minecraftArguments = mod_json.minecraftArguments;
 				}
 
 				if (versionJson.arguments && mod_json.arguments) {
@@ -304,10 +341,34 @@ export class Instance {
 				});
 			})();
 
-			let mod_json = JSON.parse(readFileSync(installerDirPath + "/version.json").toString());
-			let forgeInstallJson = JSON.parse(readFileSync(installerDirPath + "/install_profile.json").toString());
+			let mod_json: any = {};
+			let forgeInstallJson: any = {};
 
-			await this.download_libraries(forgeInstallJson.libraries, false);
+			if (existsSync(installerDirPath + "/version.json")) {
+				mod_json = JSON.parse(readFileSync(installerDirPath + "/version.json").toString());
+				forgeInstallJson = JSON.parse(readFileSync(installerDirPath + "/install_profile.json").toString());
+			} else {
+				forgeInstallJson = JSON.parse(readFileSync(installerDirPath + "/install_profile.json").toString());
+				mod_json = forgeInstallJson.versionInfo;
+				forgeInstallJson = forgeInstallJson.install;
+			}
+
+			if (existsSync(installerDirPath + `/forge-${this.version}-${this.loader_version}-universal.jar`)) {
+				copySync(installerDirPath + `/forge-${this.version}-${this.loader_version}-universal.jar`, Storage.resourcesPath + `/Storage/libraries/net/minecraftforge/forge/${this.version}-${this.loader_version}/forge-${this.version}-${this.loader_version}.jar`, { overwrite: true });
+			}
+
+			if (existsSync(installerDirPath + "/data/client.lzma")) {
+				mkdirSync(Storage.resourcesPath + `/Storage/libraries/net/minecraftforge/forge/${this.version}-${this.loader_version}/`, { recursive: true });
+				copySync(installerDirPath + "/data/client.lzma", Storage.resourcesPath + `/Storage/libraries/net/minecraftforge/forge/${this.version}-${this.loader_version}/forge-${this.version}-${this.loader_version}-clientdata.lzma`);
+				copySync(installerDirPath + "/data/client.lzma", Storage.resourcesPath + `/Storage/libraries/net/minecraftforge/forge/${this.version}-${this.loader_version}/forge-${this.version}-${this.loader_version}-universal-clientdata.lzma`);
+			}
+			if (existsSync(installerDirPath + "/maven")) {
+				readdirSync(installerDirPath + "/maven").forEach((file) => {
+					copySync(installerDirPath + "/maven" + `/${file}`, Storage.resourcesPath + "/Storage/libraries" + `/${file}`, { overwrite: true });
+				});
+			}
+
+			if (forgeInstallJson.libraries) await this.download_libraries(forgeInstallJson.libraries, false);
 
 			let manifest = JSON.parse(readFileSync(Storage.resourcesPath + "/Storage/version_manifest_v2.json").toString());
 			let version = manifest.versions.find((v: any) => v.id == mod_json.inheritsFrom);
@@ -322,7 +383,7 @@ export class Instance {
 				}
 
 				if (versionJson.minecraftArguments && mod_json.minecraftArguments) {
-					versionJson.minecraftArguments += " " + mod_json.minecraftArguments;
+					versionJson.minecraftArguments = mod_json.minecraftArguments;
 				}
 
 				if (versionJson.arguments && mod_json.arguments) {
@@ -345,6 +406,12 @@ export class Instance {
 				}
 				this.main_class = this.version_json.mainClass;
 				this.version_type = this.version_json.type;
+
+				if (this.version_json.downloads && this.version_json.downloads.client && this.version_json.downloads.client.url) {
+					if (!existsSync(Storage.resourcesPath + "/Storage/versions/" + this.version + "/" + this.version + ".jar")) {
+						await this.download_client();
+					}
+				}
 			}
 
 			if (forgeInstallJson.processors) {
@@ -626,6 +693,7 @@ export class Instance {
 	}
 
 	async download_libraries(libraries: any, add_to_libraries: boolean = true): Promise<void> {
+		console.log("Downloading Libraries");
 		for (let lib of libraries) {
 			if (!this.useLibrary(lib)) {
 				continue;
@@ -636,8 +704,29 @@ export class Instance {
 			let jarPath = path.join(...libDomain.split("."), libName, libVersion);
 			jarPath = jarPath.split("@")[0];
 
+			let existing = this.libraries.find((l) => {
+				let existingArr = l.name.split(":");
+				let newArr = lib.name.split(":");
+				existingArr[2] = "9999";
+				newArr[2] = "9999";
+				if (lib.natives && newArr.length != 4) {
+					return false;
+				}
+				return existingArr.join(":") == newArr.join(":");
+			});
+
+			if (existing && semver.gte(existing.name.split(":")[2], libVersion)) {
+				console.log("skipping ", lib.name);
+				continue;
+			} else {
+				if (existing) {
+					console.log("slicing ", lib.name);
+					this.libraries.splice(this.libraries.indexOf(existing), 1);
+				}
+			}
+
 			if (libNative == undefined) {
-				if (lib.downloads && lib.downloads.artifact && lib.downloads.artifact.url) {
+				if (lib.downloads && lib.downloads.artifact && lib.downloads.artifact.url != undefined) {
 					jarFile = libName + "-" + libVersion;
 					if (jarFile.includes("@")) {
 						jarFile = jarFile.replace("@", ".");
@@ -679,6 +768,23 @@ export class Instance {
 					if (!existsSync(Storage.resourcesPath + "/Storage/libraries/" + jarPath + "/" + jarFile)) {
 						await this.download_library(`${lib.url}/${jarPath}/${jarFile}`, jarPath, jarFile);
 					}
+				} else {
+					jarFile = libName + "-" + libVersion;
+					if (jarFile.includes("@")) {
+						jarFile = jarFile.replace("@", ".");
+					} else {
+						jarFile += ".jar";
+					}
+
+					if (add_to_libraries) {
+						let library: any = {
+							name: lib.name,
+							path: jarPath,
+							file: jarFile,
+						};
+
+						this.libraries.push(library);
+					}
 				}
 
 				let native_url = "";
@@ -712,12 +818,6 @@ export class Instance {
 			} else {
 				jarFile = libName + "-" + libVersion + "-" + libNative + ".jar";
 
-				let library: any = {
-					name: lib.name,
-					path: jarPath,
-					file: jarFile,
-				};
-
 				if (add_to_libraries) {
 					let library: any = {
 						name: lib.name,
@@ -737,6 +837,8 @@ export class Instance {
 				}
 			}
 		}
+
+		console.log("Finished Downloading Libraries");
 	}
 
 	extract_natives(jarPath: string, jarFile: string): void {
@@ -749,6 +851,11 @@ export class Instance {
 	download_library(url: string, path: string, file: string): Promise<boolean> {
 		console.log("Downloading Library: " + file);
 		return new Promise<boolean>((resolve, reject) => {
+			if (!url) {
+				resolve(true);
+				console.log("No URL");
+				return;
+			}
 			https.get(url, (res) => {
 				mkdirSync(Storage.resourcesPath + "/Storage/libraries/" + path, { recursive: true });
 				const dlpath = Storage.resourcesPath + "/Storage/libraries/" + path + "/" + file;

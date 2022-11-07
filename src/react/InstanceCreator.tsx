@@ -3,6 +3,7 @@ import { CloseBtn } from "./Components/Buttons/CloseBtn";
 import { Btn } from "./Components/Buttons/Btn";
 import { TransitionGroup, CSSTransition } from "react-transition-group";
 import { useNavigate } from "react-router-dom";
+import { LoadingIcon } from "./Components/Overlays/LoadingIcon";
 const ipcRenderer = window.require("electron").ipcRenderer;
 
 function BackBtn(props: any) {
@@ -121,6 +122,7 @@ function TypeStep(props: any) {
 
 function VersionStep(props: any) {
 	const [versions, setVersions] = React.useState<Array<any>>([]);
+	const [snapshots, setSnapshots] = React.useState<boolean>(false);
 
 	React.useEffect(() => {
 		props.setVersion("");
@@ -148,14 +150,33 @@ function VersionStep(props: any) {
 					<option value="">Select a version...</option>
 					{versions
 						? versions.map((v: any) => {
-								return (
-									<option key={v.id} value={v.id}>
-										{v.id}
-									</option>
-								);
+								if (v.type == "release" || snapshots) {
+									return (
+										<option key={v.id} value={v.id}>
+											{v.id}
+										</option>
+									);
+								} else {
+									return;
+								}
 						  })
 						: null}
 				</select>
+				<div className="input-group input-group-inline-tight center-content">
+					<div className="input-label">Show Snapshots</div>
+					<div className="input">
+						<label className="switch">
+							<input
+								type="checkbox"
+								checked={snapshots}
+								onChange={() => {
+									setSnapshots(!snapshots);
+								}}
+							/>
+							<span className="slider round"></span>
+						</label>
+					</div>
+				</div>
 			</div>
 		</>
 	);
@@ -205,23 +226,153 @@ function ModloaderVersionStep(props: any) {
 
 function ListModpacks(props: any) {
 	const [packs, setPacks] = React.useState<Array<any>>([]);
+	const [query, setQuery] = React.useState<string>("");
+	const [timer, setTimer] = React.useState<NodeJS.Timeout>(null);
+	const [scrollTimer, setScrollTimer] = React.useState<NodeJS.Timeout>(null);
+	const [pagesLoaded, setPagesLoaded] = React.useState<number>(0);
+	const listRef = React.useRef(null);
+
+	const handleQueryInput = (e: React.ChangeEvent) => {
+		setQuery((e.target as HTMLInputElement).value);
+
+		clearTimeout(timer);
+
+		const newTimer = setTimeout(async () => {
+			setPacks(await ipcRenderer.invoke("GET_MODPACKS", { search: encodeURIComponent((e.target as HTMLInputElement).value) }));
+			setPagesLoaded(1);
+			listRef.current.scrollTop = 0;
+		}, 500);
+
+		setTimer(newTimer);
+	};
+
+	const handleScroll = (e: React.UIEvent<HTMLDivElement, UIEvent>) => {
+		let target = e.target as HTMLDivElement;
+
+		if ((target.scrollTop > target.scrollHeight - 500 || target.scrollHeight - target.scrollTop == target.clientHeight) && !scrollTimer) {
+			const newTimer = setTimeout(async () => {
+				let newPacks = await ipcRenderer.invoke("GET_MODPACKS", { search: encodeURIComponent(query), page: pagesLoaded });
+				if (newPacks.length > 0) {
+					setPacks([...packs, ...newPacks]);
+					setPagesLoaded(pagesLoaded + 1);
+				}
+				clearTimeout(scrollTimer);
+				setScrollTimer(null);
+			}, 100);
+
+			setScrollTimer(newTimer);
+		}
+	};
 
 	React.useEffect(() => {
-		props.setProject(null);
-		props.setFile(null);
+		props.setProject("");
+		props.setFile("");
 
 		(async () => {
-			setPacks(await ipcRenderer.invoke("GET_MODPACKS", {}));
-			console.log(packs);
+			setPacks(await ipcRenderer.invoke("GET_MODPACKS", { search: query }));
+			setPagesLoaded(1);
 		})();
 	}, []);
 
 	return (
 		<div className="modpacks-container-list">
-			<div className="modpack-list">
+			<div className="title">CurseForge Modpacks</div>
+			<div className="actions">
+				<div className="search hover-border">
+					<div className="icon">
+						<i className="fa-solid fa-magnifying-glass"></i>
+					</div>
+					<input type="text" value={query} onChange={handleQueryInput} />
+				</div>
+			</div>
+			<div className="modpack-list" onScroll={handleScroll} ref={listRef}>
 				{packs.map((p, i) => {
-					return <div key={i}>{p.name}</div>;
+					return (
+						<div key={i} className="modpack-listing">
+							<div className="modpack-icon">
+								<img src={p.logo.thumbnailUrl} />
+							</div>
+							<div className="modpack-info">
+								<div className="modpack-title">{p.name}</div>
+								<div className="modpack-summary">{p.summary}</div>
+							</div>
+							<div className="modpack-actions">
+								<Btn
+									style={{ marginRight: "0.5rem" }}
+									onClick={() => {
+										props.setProject(p.id);
+										let files = p.latestFiles.sort((a: any, b: any) => {
+											return new Date(b.fileDate).valueOf() - new Date(a.fileDate).valueOf();
+										});
+										props.setFile(files[0].id);
+										props.setStep(3);
+									}}>
+									Download Latest
+								</Btn>
+								<Btn
+									onClick={() => {
+										props.setProject(p.id);
+										props.setProjectObj(p);
+										props.setStep(2);
+									}}>
+									Details
+								</Btn>
+							</div>
+						</div>
+					);
 				})}
+				{packs.length ? (
+					<div className="modpack-listing loading">
+						<LoadingIcon />
+					</div>
+				) : null}
+			</div>
+		</div>
+	);
+}
+
+function ModpackDetails(props: any) {
+	const [summary, setSummary] = React.useState<string>("");
+	const [files, setFiles] = React.useState<Array<any>>([]);
+
+	React.useEffect(() => {
+		(async () => {
+			setSummary(await ipcRenderer.invoke("GET_MODPACK_SUMMARY", { project: props.project }));
+			setFiles(
+				(await ipcRenderer.invoke("GET_MODPACK_VERSIONS", { project: props.project })).sort((a: any, b: any) => {
+					return new Date(b.fileDate).valueOf() - new Date(a.fileDate).valueOf();
+				})
+			);
+		})();
+	}, []);
+
+	return (
+		<div className="modpack-details-container">
+			<div className="modpack-iframe" dangerouslySetInnerHTML={{ __html: summary.replaceAll(/<\/?a[^>]*>/g, "") }}></div>
+			<div className="actions">
+				<select
+					name="file"
+					id="file"
+					value={props.file}
+					onChange={(e) => {
+						props.setFile(e.target.value);
+					}}>
+					<option value="">Select a version...</option>
+					{files.map((f: any) => {
+						return (
+							<option key={f.id} value={f.id}>
+								{f.displayName.replace(".zip", "")}
+							</option>
+						);
+					})}
+				</select>
+				<Btn
+					onClick={() => {
+						if (!props.file) return;
+						props.setStep(props.step + 1);
+					}}>
+					Install
+				</Btn>
 			</div>
 		</div>
 	);
@@ -251,24 +402,39 @@ export function InstanceCreator() {
 	const [step, setStep] = React.useState<number>(0);
 	const [type, setType] = React.useState<string>("");
 	const [version, setVersion] = React.useState<string>("");
-	const [project, setProject] = React.useState<number>(null);
-	const [file, setFile] = React.useState<number>(null);
+	const [project, setProject] = React.useState<string>("");
+	const [projectObj, setProjectObj] = React.useState<any>({});
+	const [file, setFile] = React.useState<string>("");
 	const [name, setName] = React.useState<string>("");
 	const [modLoaderVersion, setModLoaderVersion] = React.useState<string>("");
 
 	const createInstance = () => {
-		ipcRenderer.send("CREATE_INSTANCE", { name, type, version, modLoaderVersion });
+		if (type == "modpack") {
+			ipcRenderer.send("CREATE_INSTANCE_MODPACK", { name, project, file });
+		} else {
+			ipcRenderer.send("CREATE_INSTANCE", { name, type, version, modLoaderVersion });
+		}
 		navigate("/");
 	};
 
-	const steps = [<TypeStep step={step} setStep={setStep} type={type} setType={setType} />, <VersionStep step={step} setStep={setStep} version={version} setVersion={setVersion} />, <NameStep step={step} setStep={setStep} name={name} setName={setName} createInstance={createInstance} />];
+	const steps = [
+		// <ListModpacks step={step} setStep={setStep} setProject={setProject} setFile={setFile} />,
+		<TypeStep step={step} setStep={setStep} type={type} setType={setType} />,
+		<VersionStep step={step} setStep={setStep} version={version} setVersion={setVersion} />,
+		<NameStep step={step} setStep={setStep} name={name} setName={setName} createInstance={createInstance} />,
+	];
 	const modded_steps = [
 		<TypeStep step={step} setStep={setStep} type={type} setType={setType} />,
 		<VersionStep step={step} setStep={setStep} version={version} setVersion={setVersion} />,
 		<ModloaderVersionStep step={step} setStep={setStep} modLoaderVersion={modLoaderVersion} setModLoaderVersion={setModLoaderVersion} version={version} type={type} />,
 		<NameStep step={step} setStep={setStep} name={name} setName={setName} createInstance={createInstance} />,
 	];
-	const modpack_steps = [<TypeStep step={step} setStep={setStep} type={type} setType={setType} />, <ListModpacks step={step} setStep={setStep} setProject={setProject} setFile={setFile} />, <NameStep step={step} setStep={setStep} name={name} setName={setName} createInstance={createInstance} />];
+	const modpack_steps = [
+		<TypeStep step={step} setStep={setStep} type={type} setType={setType} />,
+		<ListModpacks step={step} setStep={setStep} setProject={setProject} setFile={setFile} setProjectObj={setProjectObj} />,
+		<ModpackDetails step={step} setStep={setStep} project={project} projectObj={projectObj} setFile={setFile} file={file} />,
+		<NameStep step={step} setStep={setStep} name={name} setName={setName} createInstance={createInstance} />,
+	];
 
 	const setRPC = () => {
 		ipcRenderer.send("SET_RPC", {
@@ -296,10 +462,10 @@ export function InstanceCreator() {
 	return (
 		<div id="main-content" className="no-bg">
 			<CloseBtn />
-			{step != 0 ? <BackBtn onClick={() => setStep(step - 1)} /> : null}
+			{step != 0 ? <BackBtn onClick={() => (type == "modpack" && step == 3 ? setStep(1) : setStep(step - 1))} /> : null}
 			<TransitionGroup component={null}>
 				<CSSTransition key={step} classNames="fade" timeout={200}>
-					<div className="instance-creator">{type == "modpack" ? modpack_steps[step] : type == "vanilla" ? steps[step] : modded_steps[step]}</div>
+					<div className="instance-creator">{type == "modpack" ? modpack_steps[step] : type == "vanilla" || type == "" ? steps[step] : modded_steps[step]}</div>
 				</CSSTransition>
 			</TransitionGroup>
 		</div>

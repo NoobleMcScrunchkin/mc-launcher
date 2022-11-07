@@ -60,6 +60,13 @@ export class InstanceManager {
 		return instance;
 	}
 
+	static async createInstanceFromModpack(name: string, project: number, file: number): Promise<Instance> {
+		let instance = await Instance.create_from_modpack(name, project, file);
+		InstanceManager.inprogress--;
+		this.addInstance(instance);
+		return instance;
+	}
+
 	static addInstance(instance: Instance): void {
 		this.instances.push(instance);
 		this.saveInstances();

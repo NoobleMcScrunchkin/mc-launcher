@@ -24,20 +24,21 @@ a {
     color: inherit;
 }
 
-::-webkit-scrollbar {
+*::-webkit-scrollbar {
     width: 8px;
     height: 8px;
 }
 
-::-webkit-scrollbar-track {
+*::-webkit-scrollbar-track {
     background-color: rgb(255 255 255 / 10%);
     border-radius: 10px;
 }
 
-::-webkit-scrollbar-thumb {
+*::-webkit-scrollbar-thumb {
     background-color: rgb(0 0 0 / 80%);
     border-radius: 10px;
 }
+
 
 #title-bar {
     -webkit-app-region: drag;
@@ -228,6 +229,12 @@ a {
     width: 100%;
 }
 
+.center-content {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
 .input-group {
     margin-top: 0.5rem;
     width: 100%;
@@ -239,6 +246,10 @@ a {
     flex-direction: row;
 }
 
+.input-group.input-group-inline-tight {
+    flex-direction: row;
+}
+
 .input-group.input-group-inline .input-label {
     align-self: center;
 }
@@ -246,6 +257,11 @@ a {
 .input-group input, label {
     display: block;
     width: 100%;
+}
+
+.input-group.input-group-inline-tight .input-label {
+    flex-grow: 0;
+    margin-right: 0.5rem;
 }
 
 .input-group .input-label {
@@ -406,6 +422,7 @@ a {
     cursor: auto;
     border-radius: 0.25rem;
     border: 2px solid rgb(150, 150, 150);
+    transition: opacity 0.2s;
 }
 
 .no-hover {
@@ -964,14 +981,162 @@ input:checked+.slider:before {
     align-items: center;
 }
 
-.modpacks-container-list {
+.modpacks-container-list, .modpack-details-container {
     width: 100% !important;
     display: flex;
     flex-direction: column;
+    padding-bottom: 0 !important;
 }
 
 .modpack-list {
     flex-grow: 1;
     width: 100%;
     overflow-y: auto;
+}
+
+.modpack-listing {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 0.5rem;
+    border-bottom: 1px solid #333;
+    position: relative;
+}
+
+.modpack-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    margin-left: 0.5rem;
+    flex-grow: 1;
+}
+
+.modpack-title {
+    font-size: 1.5rem;
+}
+
+.modpack-summary {
+    font-size: 0.75rem;
+    word-break: break-word;
+}
+
+.modpack-actions {
+    display: flex;
+    flex-direction: row;
+    justify-content: end;
+    align-items: flex-end;
+    margin-left: 0.5rem;
+}
+
+.modpack-actions .btn {
+    font-size: 1rem;
+    white-space: nowrap;
+}
+
+.modpacks-container-list .actions {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+    width: 100%;
+}
+
+.search {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    padding: 0.25rem;
+    background-color: #292929;
+    border-radius: 0.25rem;
+}
+
+.search .icon {
+    font-size: 1rem;
+    margin-left: 0.25rem;
+    margin-right: 0.5rem;
+}
+
+.search input[type="text"] {
+    flex-grow: 1;
+    background-color: transparent;
+    border: none;
+    color: white;
+    font-size: 1rem;
+    padding: 0.25rem;
+    outline-width: 0;
+}
+
+.modpacks-container-list .actions .search {
+    width: 50%;
+    min-width: 400px;
+}
+
+.modpack-icon img {
+    width: 64px;
+    height: 64px;
+    border-radius: 0.25rem;
+}
+
+.modpack-listing.loading {
+    height: 5rem;
+}
+
+select {
+    background-color: #292929;
+    color: white;
+    border: none;
+    border-radius: 0.25rem;
+    padding: 0.25rem;
+    font-size: 1rem;
+    outline-width: 0;
+    border: 2px solid rgb(150, 150, 150);
+    transition: all 0.2s;
+}
+
+select:hover, select:focus {
+    border: 2px solid white;
+}
+
+.step select {
+    min-width: 400px;
+    width: 75%;
+    font-size: 1.25rem;
+}
+
+.modpack-iframe {
+    width: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0 0.5rem;
+    flex-grow: 1;
+}
+
+.modpack-iframe * {
+    max-width: 100%;
+}
+
+.modpack-details-container {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+.modpack-details-container .actions {
+    width: 100%;
+    background-color: #333;
+    padding: 0.5rem;
+    border-top: 2px solid rgb(150, 150, 150);
+    display: flex;
+    flex-direction: row;
+}
+
+.modpack-details-container .actions select {
+    flex-grow: 1;
+}
+
+.modpack-details-container .actions .btn {
+    margin-left: 0.5rem;
 }

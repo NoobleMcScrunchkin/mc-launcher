@@ -37,6 +37,16 @@ ipcMain.on("CREATE_INSTANCE", async (event, arg): Promise<void> => {
 	event.sender.send("GET_INSTANCES", { instances, inprogress: InstanceManager.inprogress });
 });
 
+ipcMain.on("CREATE_INSTANCE_MODPACK", async (event, arg): Promise<void> => {
+	let instances = InstanceManager.getInstances();
+	InstanceManager.inprogress = InstanceManager.inprogress + 1;
+	event.sender.send("GET_INSTANCES", { instances, inprogress: InstanceManager.inprogress });
+
+	let instance = await InstanceManager.createInstanceFromModpack(arg.name, arg.project, arg.file);
+	instances = InstanceManager.getInstances();
+	event.sender.send("GET_INSTANCES", { instances, inprogress: InstanceManager.inprogress });
+});
+
 ipcMain.on("DELETE_INSTANCE", async (event, arg): Promise<void> => {
 	InstanceManager.removeInstance(arg.uuid);
 	event.sender.send("GET_INSTANCES", { instances: InstanceManager.getInstances(), inprogress: InstanceManager.inprogress });
@@ -199,6 +209,26 @@ ipcMain.handle("GET_VERSIONS", async (event, arg): Promise<any> => {
 
 ipcMain.handle("GET_MODPACKS", async (event, arg): Promise<any> => {
 	let res = await fetch(`https://api.curseforge.com/v1/mods/search?gameId=432&categoryId=0&pageSize=40&index=${arg.page * 40 || 0}&sortField=1&sortOrder=desc&gameVersion=&classId=4471&searchFilter=${arg.search || ""}`, {
+		headers: {
+			"x-api-key": "$2a$10$T8MZffSoJ/6HMP1FAAqJe.YLrpCHttNPSCNU3Rs85Q8BRzgOpd/Ai",
+		},
+	});
+	let json = await res.json();
+	return json.data;
+});
+
+ipcMain.handle("GET_MODPACK_SUMMARY", async (event, arg): Promise<any> => {
+	let res = await fetch(`https://api.curseforge.com/v1/mods/${arg.project}/description`, {
+		headers: {
+			"x-api-key": "$2a$10$T8MZffSoJ/6HMP1FAAqJe.YLrpCHttNPSCNU3Rs85Q8BRzgOpd/Ai",
+		},
+	});
+	let json = await res.json();
+	return json.data;
+});
+
+ipcMain.handle("GET_MODPACK_VERSIONS", async (event, arg): Promise<any> => {
+	let res = await fetch(`https://api.curseforge.com/v1/mods/${arg.project}/files`, {
 		headers: {
 			"x-api-key": "$2a$10$T8MZffSoJ/6HMP1FAAqJe.YLrpCHttNPSCNU3Rs85Q8BRzgOpd/Ai",
 		},

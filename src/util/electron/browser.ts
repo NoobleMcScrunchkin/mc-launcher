@@ -8,8 +8,6 @@ export class Browser {
 	static mainWindow: BrowserWindow | null = null;
 
 	static createWindow(): void {
-		session.defaultSession.loadExtension("C:\\Users\\kiera\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Extensions\\fmkadmapgofadopljbjfkapdkoienihi\\4.25.0_0");
-
 		Browser.mainWindow = new BrowserWindow({
 			height: 600,
 			width: 800,

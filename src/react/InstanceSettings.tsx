@@ -6,7 +6,7 @@ import { Outlet, useOutletContext, useLocation, useParams } from "react-router-d
 import { Instance } from "../util/minecraft/game/instance";
 const ipcRenderer = window.require("electron").ipcRenderer;
 
-type ContextType = { instance: Instance | null; setInstance: React.Dispatch<React.SetStateAction<Instance>> | null };
+type ContextType = { instance: Instance | null; setInstance: React.Dispatch<React.SetStateAction<Instance>> | null; updateInstance: () => void | null };
 
 export function InstanceSettings(props: any) {
 	const location = useLocation();
@@ -25,12 +25,18 @@ export function InstanceSettings(props: any) {
 		});
 	};
 
+	const updateInstance = async () => {
+		setInstance(await ipcRenderer.invoke("GET_INSTANCE", { uuid }));
+	};
+
 	React.useEffect(() => {
 		setRPC();
 
-		(async () => {
-			setInstance(await ipcRenderer.invoke("GET_INSTANCE", { uuid }));
-		})();
+		if (instance == null) {
+			(async () => {
+				setInstance(await ipcRenderer.invoke("GET_INSTANCE", { uuid }));
+			})();
+		}
 
 		ipcRenderer.addListener("SET_RPC", (event, arg) => {
 			setRPC();
@@ -39,7 +45,7 @@ export function InstanceSettings(props: any) {
 		return () => {
 			ipcRenderer.removeAllListeners("SET_RPC");
 		};
-	}, [instance]);
+	}, []);
 
 	return (
 		<div id="main-content">
@@ -54,7 +60,7 @@ export function InstanceSettings(props: any) {
 			<div className="settings-container">
 				<InstanceSettingsSidebar currentPage={locationStr} uuid={instance ? instance.uuid : ""} modded={instance ? instance.type != "vanilla" : false} />
 				<div className="settings-content">
-					<Outlet context={{ instance, setInstance }} />
+					<Outlet context={{ instance, setInstance, updateInstance }} />
 				</div>
 			</div>
 		</div>

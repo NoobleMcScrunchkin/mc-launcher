@@ -19,7 +19,12 @@ import { JavaInstanceSettings } from "./react/Components/Instance/JavaInstanceSe
 import "./css/main.css";
 import "./fontawesome/css/all.css";
 
+const waveTime = 2000;
+const animationTime = 1500;
+
 function App() {
+	const [loading, setLoading] = React.useState<boolean>(true);
+	const [waveUp, setWaveUp] = React.useState<boolean>(false);
 	const location = useLocation();
 
 	if (location.pathname == "/log") {
@@ -30,28 +35,48 @@ function App() {
 		);
 	}
 
+	React.useEffect(() => {
+		setTimeout(() => {
+			setWaveUp(true);
+		}, waveTime);
+		setTimeout(() => {
+			setLoading(false);
+		}, waveTime + animationTime);
+	}, []);
+
 	return (
 		<Root>
 			<TransitionGroup component={null}>
-				<CSSTransition key={location.key} classNames="fade" timeout={200}>
-					<Routes location={location}>
-						<Route path="/" element={<Dashboard />}></Route>
-						<Route path="/instanceCreator" element={<InstanceCreator />}></Route>
-						<Route path="/instanceUpdater/:uuid" element={<InstanceUpdater />}></Route>
-						<Route path="/users" element={<Users />}></Route>
-						<Route path="/settings" element={<Settings />}>
-							<Route path="general" element={<GeneralSettings />}></Route>
-						</Route>
-						<Route path="/instanceSettings/:uuid" element={<InstanceSettings />}>
-							<Route path="general" element={<GeneralInstanceSettings />}></Route>
-							<Route path="java" element={<JavaInstanceSettings />}></Route>
-							<Route path="mods" element={<ModsInstanceSettings />}></Route>
-						</Route>
-						<Route path="/instanceSettings/:uuid" element={<InstanceSettings />}>
-							<Route path="general" element={<GeneralInstanceSettings />}></Route>
-							<Route path="java" element={<JavaInstanceSettings />}></Route>
-						</Route>
-					</Routes>
+				<CSSTransition key={loading + location.key} classNames="fade" timeout={200}>
+					{loading ? (
+						<div className="loading-screen-container">
+							<div className="title">MC Launcher</div>
+							<div className={`ocean ${waveUp ? "wave-up" : ""}`}>
+								<div className="wave"></div>
+								<div className="wave"></div>
+								<div className="ocean-bottom"></div>
+							</div>
+						</div>
+					) : (
+						<Routes location={location}>
+							<Route path="/" element={<Dashboard />}></Route>
+							<Route path="/instanceCreator" element={<InstanceCreator />}></Route>
+							<Route path="/instanceUpdater/:uuid" element={<InstanceUpdater />}></Route>
+							<Route path="/users" element={<Users />}></Route>
+							<Route path="/settings" element={<Settings />}>
+								<Route path="general" element={<GeneralSettings />}></Route>
+							</Route>
+							<Route path="/instanceSettings/:uuid" element={<InstanceSettings />}>
+								<Route path="general" element={<GeneralInstanceSettings />}></Route>
+								<Route path="java" element={<JavaInstanceSettings />}></Route>
+								<Route path="mods" element={<ModsInstanceSettings />}></Route>
+							</Route>
+							<Route path="/instanceSettings/:uuid" element={<InstanceSettings />}>
+								<Route path="general" element={<GeneralInstanceSettings />}></Route>
+								<Route path="java" element={<JavaInstanceSettings />}></Route>
+							</Route>
+						</Routes>
+					)}
 				</CSSTransition>
 			</TransitionGroup>
 		</Root>

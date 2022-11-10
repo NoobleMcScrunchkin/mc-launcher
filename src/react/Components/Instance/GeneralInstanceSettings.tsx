@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 const ipcRenderer = window.require("electron").ipcRenderer;
 
 export function GeneralInstanceSettings() {
-	const { instance, setInstance } = useInstance();
+	const { instance, setInstance, updateInstance } = useInstance();
 	const [show, setShow] = React.useState<boolean>(false);
 	const [instanceName, setInstanceName] = React.useState<string>();
 
@@ -39,7 +39,8 @@ export function GeneralInstanceSettings() {
 						let newInstance = instance;
 						newInstance.name = e.target.value;
 						setInstance(newInstance);
-						ipcRenderer.send("SET_INSTANCE_SETTING", { uuid: instance.uuid, key: "name", value: e.target.value });
+						ipcRenderer.send("SET_INSTANCE_SETTING", { uuid: newInstance.uuid, key: "name", value: e.target.value });
+						updateInstance();
 					}}
 				/>
 			</div>

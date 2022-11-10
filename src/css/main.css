@@ -1266,4 +1266,5 @@ select:hover, select:focus {
 .loading-screen-container .title {
     margin-top: 8%;
     font-size: 4rem;
+    transition: opacity 0.5s linear;
 }

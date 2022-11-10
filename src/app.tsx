@@ -50,7 +50,9 @@ function App() {
 				<CSSTransition key={loading + location.key} classNames="fade" timeout={200}>
 					{loading ? (
 						<div className="loading-screen-container">
-							<div className="title">MC Launcher</div>
+							<div className="title" style={{ opacity: waveUp ? 0 : 1 }}>
+								MC Launcher
+							</div>
 							<div className={`ocean ${waveUp ? "wave-up" : ""}`}>
 								<div className="wave"></div>
 								<div className="wave"></div>

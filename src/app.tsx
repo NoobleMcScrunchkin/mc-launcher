@@ -12,6 +12,7 @@ import { RootNoFrame } from "./react/RootNoFrame";
 import { Settings } from "./react/Settings";
 import { InstanceSettings } from "./react/InstanceSettings";
 import { GeneralSettings } from "./react/Components/Settings/GeneralSettings";
+import { JavaSettings } from "./react/Components/Settings/JavaSettings";
 import { GeneralInstanceSettings } from "./react/Components/Instance/GeneralInstanceSettings";
 import { ModsInstanceSettings } from "./react/Components/Instance/ModsInstanceSettings";
 import { JavaInstanceSettings } from "./react/Components/Instance/JavaInstanceSettings";
@@ -67,6 +68,7 @@ function App() {
 							<Route path="/users" element={<Users />}></Route>
 							<Route path="/settings" element={<Settings />}>
 								<Route path="general" element={<GeneralSettings />}></Route>
+								<Route path="java" element={<JavaSettings />}></Route>
 							</Route>
 							<Route path="/instanceSettings/:uuid" element={<InstanceSettings />}>
 								<Route path="general" element={<GeneralInstanceSettings />}></Route>

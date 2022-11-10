@@ -26,7 +26,7 @@ export function GeneralInstanceSettings() {
 	return (
 		<>
 			<div className="input-group">
-				<label htmlFor="type" className="input-label">
+				<label htmlFor="instanceName" className="input-label">
 					Instance Name
 				</label>
 				<input

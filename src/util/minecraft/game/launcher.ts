@@ -2,8 +2,9 @@ import { exec } from "child_process";
 import { Instance } from "./instance";
 import { User } from "../auth/user";
 import { UserManager } from "../auth/userManager";
-import { mkdirSync } from "fs";
+import { existsSync, mkdirSync } from "fs";
 import { Storage } from "../../storage";
+import { Settings } from "../../settings";
 import path from "path";
 
 export async function startGame(instance: Instance, started_callback: () => void = () => {}, stdout_callback: (data: string) => void = (data) => {}, exit_callback: () => void = () => {}, error_callback: (e: string) => void = () => {}): Promise<void> {
@@ -54,9 +55,15 @@ export async function startGame(instance: Instance, started_callback: () => void
 
 	let java_path: string;
 	if (instance.java_version <= 8) {
-		java_path = "C:\\Users\\kiera\\Desktop\\jre1.8.0_202\\bin\\java.exe";
+		java_path = Settings.get_key("java8_path");
+		if (java_path == "" || !existsSync(java_path)) {
+			throw "Java 8 path is invalid (Run setup in settings)";
+		}
 	} else {
-		java_path = "java";
+		java_path = Settings.get_key("java17_path");
+		if (java_path == "" || !existsSync(java_path)) {
+			throw "Java 17 path is invalid (Run setup in settings)";
+		}
 	}
 
 	const javaRuntime = exec(`${process.platform == "win32" ? "&" : ""}${java_path} ${processCallStr}`, { shell: process.platform == "win32" ? "powershell" : undefined, cwd: instance.mc_dir }, (error, stdout, stderr) => {

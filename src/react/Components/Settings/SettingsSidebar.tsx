@@ -8,6 +8,9 @@ export function SettingsSidebar(props: any) {
 				<Link to={"/settings/general"}>
 					<div className={`setting-sidebar-item hover-text` + (props.currentPage == "general" ? " active" : "")}>General</div>
 				</Link>
+				<Link to={"/settings/java"}>
+					<div className={`setting-sidebar-item hover-text` + (props.currentPage == "java" ? " active" : "")}>Java</div>
+				</Link>
 			</div>
 		</>
 	);

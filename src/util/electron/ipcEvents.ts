@@ -5,11 +5,15 @@ import { startGame } from "../minecraft/game/launcher";
 import { Browser } from "./browser";
 import { DiscordRPC } from "../discord/rpc";
 import { Settings } from "../settings";
-import { existsSync, readdirSync, readFileSync, renameSync } from "fs";
+import { createReadStream, createWriteStream, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, unlinkSync } from "fs";
+import unzipper from "unzipper";
 import { Storage } from "../storage";
 import fetch from "node-fetch";
 import { exec } from "child_process";
+import crypto from "crypto";
 import path from "path";
+import { https } from "follow-redirects";
+import tar from "tar";
 
 declare const DASHBOARD_WEBPACK_ENTRY: string;
 
@@ -144,7 +148,10 @@ ipcMain.on("START_INSTANCE", async (event, arg): Promise<void> => {
 			(e) => {
 				event.sender.send("ERROR", { title: "Error starting game!", description: e });
 			}
-		);
+		).catch((e) => {
+			event.sender.send("ERROR", { title: "Error starting game!", description: e instanceof Error ? e.message : e });
+			event.sender.send("INSTANCE_START_ERROR", { uuid: instance.uuid, error: e instanceof Error ? e.message : e });
+		});
 	} catch (e: any) {
 		event.sender.send("ERROR", { title: "Error starting game!", description: e instanceof Error ? e.message : e });
 		event.sender.send("INSTANCE_START_ERROR", { uuid: instance.uuid, error: e instanceof Error ? e.message : e });
@@ -313,4 +320,189 @@ ipcMain.handle("TOGGLE_MOD", async (event, arg): Promise<any> => {
 	}
 
 	return getInstanceMods(arg.uuid);
+});
+
+ipcMain.handle("DOWNLOAD_JAVA", async (event, arg): Promise<any> => {
+	console.log("Downloading Java");
+
+	if (existsSync(path.resolve(Storage.resourcesPath + `/Storage/java`))) {
+		rmSync(path.resolve(Storage.resourcesPath + `/Storage/java`), { recursive: true, force: true });
+	}
+
+	mkdirSync(path.resolve(Storage.resourcesPath + `/Storage/java`), { recursive: true });
+
+	let java8Installed = false;
+	let java17Installed = false;
+
+	let os = process.platform.toString();
+	os = os == "win32" ? "windows" : os;
+	os = os == "darwin" ? "mac" : os;
+
+	let java8res = await fetch("https://api.adoptium.net/v3/assets/latest/8/hotspot?image_type=jre");
+	let java8json = await java8res.json();
+
+	let java8obj = java8json.find((v: any) => {
+		return v.binary.architecture == "x64" && v.binary.os == os;
+	});
+
+	if (java8obj) {
+		const getDirectories = readdirSync(path.resolve(Storage.resourcesPath + `/Storage/java`), { withFileTypes: true })
+			.filter((dirent) => dirent.isDirectory())
+			.map((dirent) => dirent.name);
+
+		let url = java8obj.binary.package.link;
+		let name = java8obj.binary.package.name;
+		let checksum = java8obj.binary.package.checksum;
+		let download_valid = false;
+		const dlpath = path.resolve(Storage.resourcesPath + `/Storage/java/${name}`);
+
+		while (!download_valid) {
+			await (() => {
+				return new Promise<boolean>((resolve, reject) => {
+					https.get(url, (res) => {
+						const filePath = createWriteStream(dlpath);
+						res.pipe(filePath);
+						filePath.on("finish", async () => {
+							filePath.close();
+							console.log("Download Completed");
+							resolve(true);
+						});
+					});
+				});
+			})();
+
+			let fileBuffer = readFileSync(dlpath);
+			let hashSum = crypto.createHash("sha256");
+			hashSum.update(fileBuffer);
+			let hex = hashSum.digest("hex");
+			download_valid = hex == checksum;
+		}
+
+		if (dlpath.endsWith(".zip")) {
+			await (() => {
+				return new Promise<boolean>((resolve, reject) => {
+					const readStream = createReadStream(dlpath).pipe(unzipper.Extract({ path: path.resolve(Storage.resourcesPath + `/Storage/java/`) }));
+					readStream.on("close", () => {
+						resolve(true);
+					});
+				});
+			})();
+		} else if (dlpath.endsWith(".tar.gz")) {
+			await (() => {
+				return new Promise<boolean>((resolve, reject) => {
+					tar.extract({
+						file: dlpath,
+						cwd: path.resolve(Storage.resourcesPath + `/Storage/java/`),
+					})
+						.then(() => {
+							resolve(true);
+						})
+						.catch((err) => {
+							resolve(false);
+						});
+				});
+			})();
+		}
+
+		unlinkSync(dlpath);
+
+		const getCurDirectories = readdirSync(path.resolve(Storage.resourcesPath + `/Storage/java`), { withFileTypes: true })
+			.filter((dirent) => dirent.isDirectory())
+			.map((dirent) => dirent.name);
+
+		let newDir = getCurDirectories.filter((v) => !getDirectories.includes(v))[0];
+
+		if (newDir) {
+			renameSync(path.resolve(Storage.resourcesPath + `/Storage/java/${newDir}`), path.resolve(Storage.resourcesPath + `/Storage/java/java8`));
+			java8Installed = true;
+		}
+	}
+
+	let java17res = await fetch("https://api.adoptium.net/v3/assets/latest/17/hotspot?image_type=jre");
+	let java17json = await java17res.json();
+
+	let java17obj = java17json.find((v: any) => {
+		return v.binary.architecture == "x64" && v.binary.os == os;
+	});
+
+	if (java17obj) {
+		const getDirectories = readdirSync(path.resolve(Storage.resourcesPath + `/Storage/java`), { withFileTypes: true })
+			.filter((dirent) => dirent.isDirectory())
+			.map((dirent) => dirent.name);
+
+		let url = java17obj.binary.package.link;
+		let name = java17obj.binary.package.name;
+		let checksum = java17obj.binary.package.checksum;
+		let download_valid = false;
+		const dlpath = path.resolve(Storage.resourcesPath + `/Storage/java/${name}`);
+
+		while (!download_valid) {
+			await (() => {
+				return new Promise<boolean>((resolve, reject) => {
+					https.get(url, (res) => {
+						const filePath = createWriteStream(dlpath);
+						res.pipe(filePath);
+						filePath.on("finish", async () => {
+							filePath.close();
+							console.log("Download Completed");
+							resolve(true);
+						});
+					});
+				});
+			})();
+
+			let fileBuffer = readFileSync(dlpath);
+			let hashSum = crypto.createHash("sha256");
+			hashSum.update(fileBuffer);
+			let hex = hashSum.digest("hex");
+			download_valid = hex == checksum;
+		}
+
+		if (dlpath.endsWith(".zip")) {
+			await (() => {
+				return new Promise<boolean>((resolve, reject) => {
+					const readStream = createReadStream(dlpath).pipe(unzipper.Extract({ path: path.resolve(Storage.resourcesPath + `/Storage/java/`) }));
+					readStream.on("close", () => {
+						resolve(true);
+					});
+				});
+			})();
+		} else if (dlpath.endsWith(".tar.gz")) {
+			await (() => {
+				return new Promise<boolean>((resolve, reject) => {
+					tar.extract({
+						file: dlpath,
+						cwd: path.resolve(Storage.resourcesPath + `/Storage/java/`),
+					})
+						.then(() => {
+							resolve(true);
+						})
+						.catch((err) => {
+							resolve(false);
+						});
+				});
+			})();
+		}
+
+		unlinkSync(dlpath);
+
+		const getCurDirectories = readdirSync(path.resolve(Storage.resourcesPath + `/Storage/java`), { withFileTypes: true })
+			.filter((dirent) => dirent.isDirectory())
+			.map((dirent) => dirent.name);
+
+		let newDir = getCurDirectories.filter((v) => !getDirectories.includes(v))[0];
+
+		if (newDir) {
+			renameSync(path.resolve(Storage.resourcesPath + `/Storage/java/${newDir}`), path.resolve(Storage.resourcesPath + `/Storage/java/java17`));
+			java17Installed = true;
+		}
+	}
+
+	let ext = os == "windows" ? ".exe" : "";
+
+	Settings.set_key("java8_path", java8Installed ? path.resolve(Storage.resourcesPath + `/Storage/java/java8/bin/java${ext}`) : "");
+	Settings.set_key("java17_path", java8Installed ? path.resolve(Storage.resourcesPath + `/Storage/java/java17/bin/java${ext}`) : "");
+
+	console.log("Finished Downloading Java");
+	return { java8: java8Installed ? path.resolve(Storage.resourcesPath + `/Storage/java/java8/bin/java${ext}`) : "", java17: java17Installed ? path.resolve(Storage.resourcesPath + `/Storage/java/java17/bin/java${ext}`) : "" };
 });

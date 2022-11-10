@@ -1268,3 +1268,13 @@ select:hover, select:focus {
     font-size: 4rem;
     transition: opacity 0.5s linear;
 }
+
+.java-settings {
+    width: 100%;
+    position: relative;
+}
+
+.java-settings.loading .input-group {
+    opacity: 0.2;
+    pointer-events: none;
+}

@@ -31,5 +31,6 @@ export class Settings {
 
 	static set_key(key: string, value: any): void {
 		this.settings_storage[key as keyof typeof this.settings_storage] = value;
+		Settings.save_settings();
 	}
 }

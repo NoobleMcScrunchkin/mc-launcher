@@ -1,6 +1,7 @@
 import * as React from "react";
 import { useInstance } from "../../InstanceSettings";
 import { Btn } from "../Buttons/Btn";
+import { Link } from "react-router-dom";
 const ipcRenderer = window.require("electron").ipcRenderer;
 
 export function GeneralInstanceSettings() {
@@ -43,11 +44,11 @@ export function GeneralInstanceSettings() {
 				/>
 			</div>
 			<div className="input-group input-group-inline">
-				<div className="input-label">
-					Minecraft Version ({instance.type} {instance.type != "vanilla" ? `- ${instance.loader_version}` : ""} - {instance.version})
-				</div>
+				<div className="input-label">{instance.modpack ? `${instance.modpack_info.name.replace(".zip", "")}` : `Minecraft Version (${instance.type} ${instance.type != "vanilla" ? `- ${instance.loader_version}` : ""} - ${instance.version})`}</div>
 				<div className="input">
-					<Btn style={{ fontSize: "1rem", padding: "0.5rem" }}>Change Version</Btn>
+					<Link to={`/instanceUpdater/${instance.uuid}`}>
+						<Btn style={{ fontSize: "1rem", padding: "0.5rem" }}>Change Version</Btn>
+					</Link>
 				</div>
 			</div>
 		</>

@@ -11,6 +11,11 @@ export function InstanceSettingsSidebar(props: any) {
 				<Link to={"/instanceSettings/" + props.uuid + "/java"}>
 					<div className={`setting-sidebar-item hover-text` + (props.currentPage == "java" ? " active" : "")}>Java</div>
 				</Link>
+				{props.modded && (
+					<Link to={"/instanceSettings/" + props.uuid + "/mods"}>
+						<div className={`setting-sidebar-item hover-text` + (props.currentPage == "mods" ? " active" : "")}>Mods</div>
+					</Link>
+				)}
 			</div>
 		</>
 	);

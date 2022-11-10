@@ -33,6 +33,7 @@ export class InstanceManager {
 				if (!this.instances.find((i) => i.uuid == instance.uuid)) {
 					let instanceObj = Object.setPrototypeOf(instance, Instance.prototype);
 					not_ordered = not_ordered || instanceObj.order == null;
+					instanceObj.updating = false;
 					this.instances.push(instanceObj);
 				}
 			});
@@ -110,14 +111,7 @@ export class InstanceManager {
 			return a.order < b.order ? 1 : -1;
 		});
 
-		return instances.map((i) => {
-			return {
-				name: i.name,
-				uuid: i.uuid,
-				type: i.type,
-				version: i.version,
-			};
-		});
+		return instances;
 	}
 
 	static front_order(uuid: string) {

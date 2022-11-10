@@ -5,9 +5,11 @@ import { startGame } from "../minecraft/game/launcher";
 import { Browser } from "./browser";
 import { DiscordRPC } from "../discord/rpc";
 import { Settings } from "../settings";
-import { readFileSync } from "fs";
+import { existsSync, readdirSync, readFileSync, renameSync } from "fs";
 import { Storage } from "../storage";
 import fetch from "node-fetch";
+import { exec } from "child_process";
+import path from "path";
 
 declare const DASHBOARD_WEBPACK_ENTRY: string;
 
@@ -44,6 +46,24 @@ ipcMain.on("CREATE_INSTANCE_MODPACK", async (event, arg): Promise<void> => {
 
 	let instance = await InstanceManager.createInstanceFromModpack(arg.name, arg.project, arg.file);
 	instances = InstanceManager.getInstances();
+	event.sender.send("GET_INSTANCES", { instances, inprogress: InstanceManager.inprogress });
+});
+
+ipcMain.on("UPDATE_INSTANCE", async (event, arg): Promise<void> => {
+	let instance = InstanceManager.getInstance(arg.uuid);
+	if (!instance) return;
+	await instance.update(arg.type, arg.version, arg.modLoaderVersion);
+
+	let instances = InstanceManager.getInstances();
+	event.sender.send("GET_INSTANCES", { instances, inprogress: InstanceManager.inprogress });
+});
+
+ipcMain.on("UPDATE_INSTANCE_MODPACK", async (event, arg): Promise<void> => {
+	let instance = InstanceManager.getInstance(arg.uuid);
+	if (!instance) return;
+	await instance.update_modpack(arg.project, arg.file);
+
+	let instances = InstanceManager.getInstances();
 	event.sender.send("GET_INSTANCES", { instances, inprogress: InstanceManager.inprogress });
 });
 
@@ -235,4 +255,62 @@ ipcMain.handle("GET_MODPACK_VERSIONS", async (event, arg): Promise<any> => {
 	});
 	let json = await res.json();
 	return json.data;
+});
+
+ipcMain.on("OPEN_INSTANCE_FOLDER", async (event, arg): Promise<any> => {
+	let command = "";
+	switch (process.platform) {
+		case "darwin":
+			command = "open";
+			break;
+		case "win32":
+			command = "explorer";
+			break;
+		default:
+			command = "xdg-open";
+			break;
+	}
+	let dirPath = path.resolve(Storage.resourcesPath + "/Storage/instances/" + arg.uuid);
+	exec(`${command} "${dirPath}"`);
+});
+
+function getInstanceMods(uuid: string) {
+	let instance = InstanceManager.getInstance(uuid);
+	if (!instance) {
+		return [];
+	}
+	let mods_dir = instance.mc_dir + "/mods";
+	let mods = [];
+	if (existsSync(mods_dir)) {
+		for (let file of readdirSync(mods_dir)) {
+			if (file.endsWith(".jar") || file.endsWith(".disabled")) {
+				mods.push(file);
+			}
+		}
+	}
+	return mods;
+}
+
+ipcMain.handle("GET_INSTANCE_MODS", async (event, arg): Promise<any> => {
+	return getInstanceMods(arg.uuid);
+});
+
+ipcMain.handle("TOGGLE_MOD", async (event, arg): Promise<any> => {
+	let instance = InstanceManager.getInstance(arg.uuid);
+	if (!instance) {
+		return [];
+	}
+	let mods_dir = instance.mc_dir + "/mods";
+
+	if (existsSync(mods_dir)) {
+		if (existsSync(mods_dir + `/${arg.mod}`)) {
+			if (arg.mod.endsWith(".disabled")) {
+				renameSync(mods_dir + `/${arg.mod}`, mods_dir + `/${arg.mod.replace(".disabled", ".jar")}`);
+			} else {
+				renameSync(mods_dir + `/${arg.mod}`, mods_dir + `/${arg.mod.replace(".jar", ".disabled")}`);
+			}
+		}
+	}
+
+	return getInstanceMods(arg.uuid);
 });

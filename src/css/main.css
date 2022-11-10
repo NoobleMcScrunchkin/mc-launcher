@@ -532,10 +532,11 @@ a {
 }
 
 .settings-container {
-    flex-grow: 1;
+    height: calc(100% - 6rem);
     display: flex;
     flex-direction: row;
     border-top: 2px solid rgb(150, 150, 150);
+    overflow-y: hidden;
 }
 
 .setting-sidebar {
@@ -546,6 +547,7 @@ a {
     flex-direction: column;
     font-size: 1.25rem;
     border-right: 2px solid rgb(150, 150, 150);
+    overflow-y: auto;
 }
 
 .settings-content {
@@ -553,6 +555,7 @@ a {
     flex-grow: 1;
     height: 100%;
     padding: 0.5rem 1rem;
+    padding-bottom: 0;
 }
 
 .setting-sidebar-item {
@@ -1073,6 +1076,7 @@ input:checked+.slider:before {
 .modpacks-container-list .actions .search {
     width: 50%;
     min-width: 400px;
+    max-width: max-content;
 }
 
 .modpack-icon img {
@@ -1102,7 +1106,6 @@ select:hover, select:focus {
 }
 
 .step select {
-    min-width: 400px;
     width: 75%;
     font-size: 1.25rem;
 }
@@ -1139,4 +1142,41 @@ select:hover, select:focus {
 
 .modpack-details-container .actions .btn {
     margin-left: 0.5rem;
+}
+
+.mods-container {
+    width: 100%;
+    height: 100%;
+}
+
+.mods-container .actions {
+    display: flex;
+    flex-direction: row;
+    padding-bottom: 0.5rem;
+    width: 100%;
+    height: 3rem;
+}
+
+.mods-container .actions .search {
+    flex-grow: 1;
+    margin-right: 0.5rem;
+}
+
+.mods-list {
+    overflow-y: auto;
+    width: 100%;
+    height: calc(100% - 3rem);
+}
+
+.mods-list .mod {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 0.5rem;
+    border-bottom: 1px solid #333;
+    position: relative;
+}
+
+.mods-list .mod .input-label {
+    font-size: 1rem;
 }

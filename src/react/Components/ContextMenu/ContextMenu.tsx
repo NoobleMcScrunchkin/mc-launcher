@@ -17,6 +17,11 @@ export function ContextMenu(props: any) {
 		}
 
 		if (ReactDOM.findDOMNode(nodeRef.current).contains(event.target as HTMLElement)) {
+			if (event.which == 1) {
+				setTimeout(() => {
+					setVisible(false);
+				}, 500);
+			}
 			return;
 		}
 

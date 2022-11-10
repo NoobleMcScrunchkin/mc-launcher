@@ -11,10 +11,9 @@ const ResponsiveEllipsis = responsiveHOC()(LinesEllipsis);
 const { ipcRenderer } = window.require("electron");
 
 export function InstanceIcon(props: any) {
-	const nodeRef = React.useRef();
-	const [loading, setLoading] = React.useState<string>(props.loading ? "loading" : "");
-
 	let instance: Instance = props.instance;
+	const nodeRef = React.useRef();
+	const [loading, setLoading] = React.useState<string>(props.loading || instance.updating ? "loading" : "");
 
 	const startGame = (event: React.MouseEvent<HTMLDivElement>) => {
 		if (!instance) return;
@@ -29,6 +28,10 @@ export function InstanceIcon(props: any) {
 
 	const deleteInstance = () => {
 		ipcRenderer.send("DELETE_INSTANCE", { uuid: instance.uuid });
+	};
+
+	const openFolder = () => {
+		ipcRenderer.send("OPEN_INSTANCE_FOLDER", { uuid: instance.uuid });
 	};
 
 	React.useEffect(() => {
@@ -56,7 +59,7 @@ export function InstanceIcon(props: any) {
 		<>
 			<div className={`instance-icon ${loading}`}>
 				<div ref={nodeRef} className={`instance-container hover-border loading-dim hover-text-dim hover-text-blur`} onMouseDown={startGame}>
-					{!props.loading && (
+					{!props.loading && !instance.updating && (
 						<>
 							<div className="instance-name">
 								<ResponsiveEllipsis text={instance.name} maxLine="2" ellipsis="..." trimRight basedOn="letters" />
@@ -66,8 +69,14 @@ export function InstanceIcon(props: any) {
 								<ContextMenuNavItem to={"/instanceSettings/" + instance.uuid + "/general"} icon={<i className="fa-solid fa-pencil"></i>}>
 									Edit Instance
 								</ContextMenuNavItem>
-								<ContextMenuNavItem icon={<i className="fa-solid fa-screwdriver-wrench"></i>}>Manage Mods</ContextMenuNavItem>
-								<ContextMenuNavItem icon={<i className="fa-solid fa-folder"></i>}>Open Folder</ContextMenuNavItem>
+								{instance.type != "vanilla" && (
+									<ContextMenuNavItem to={"/instanceSettings/" + instance.uuid + "/mods"} icon={<i className="fa-solid fa-screwdriver-wrench"></i>}>
+										Manage Mods
+									</ContextMenuNavItem>
+								)}
+								<ContextMenuNavItem icon={<i className="fa-solid fa-folder"></i>} onClick={openFolder}>
+									Open Folder
+								</ContextMenuNavItem>
 								<ContextMenuNavItem icon={<i className="fa-solid fa-trash"></i>} className="hover-text-red" onClick={deleteInstance}>
 									Delete Instance
 								</ContextMenuNavItem>

@@ -31,7 +31,8 @@ export function InstanceGrid(props: any) {
 					return <InstanceIcon key={i} loading={true} />;
 				})}
 				{instances.map((instance: Instance) => {
-					return <InstanceIcon key={instance.uuid} instance={instance} />;
+					if (!instance) return;
+					return <InstanceIcon key={instance.uuid + instance.updating} instance={instance} />;
 				})}
 			</div>
 		</>

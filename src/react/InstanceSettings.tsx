@@ -52,7 +52,7 @@ export function InstanceSettings(props: any) {
 				</div>
 			</Header>
 			<div className="settings-container">
-				<InstanceSettingsSidebar currentPage={locationStr} uuid={instance ? instance.uuid : ""} />
+				<InstanceSettingsSidebar currentPage={locationStr} uuid={instance ? instance.uuid : ""} modded={instance ? instance.type != "vanilla" : false} />
 				<div className="settings-content">
 					<Outlet context={{ instance, setInstance }} />
 				</div>

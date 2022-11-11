@@ -13,7 +13,6 @@ export class Browser {
 			height: 600,
 			width: 800,
 			webPreferences: {
-				preload: DASHBOARD_PRELOAD_WEBPACK_ENTRY,
 				nodeIntegration: true,
 				contextIsolation: false,
 			},

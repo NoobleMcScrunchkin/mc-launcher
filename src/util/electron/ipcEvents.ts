@@ -1,4 +1,4 @@
-import { ipcMain, BrowserWindow } from "electron";
+import { ipcMain, BrowserWindow, autoUpdater } from "electron";
 import { UserManager } from "../minecraft/auth/userManager";
 import { InstanceManager } from "../minecraft/game/instanceManager";
 import { startGame } from "../minecraft/game/launcher";
@@ -506,4 +506,12 @@ ipcMain.handle("DOWNLOAD_JAVA", async (event, arg): Promise<any> => {
 
 	console.log("Finished Downloading Java");
 	return { java8: java8Installed ? path.resolve(Storage.resourcesPath + `/Storage/java/java8/bin/java${ext}`) : "", java17: java17Installed ? path.resolve(Storage.resourcesPath + `/Storage/java/java17/bin/java${ext}`) : "" };
+});
+
+ipcMain.handle("GET_UPDATED_DOWNLOADED", async (event, arg): Promise<any> => {
+	return Settings.update_downloaded;
+});
+
+ipcMain.on("DO_UPDATE", async (event, arg): Promise<any> => {
+	autoUpdater.quitAndInstall();
 });

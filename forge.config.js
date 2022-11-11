@@ -23,7 +23,7 @@ const config = {
 					owner: "NoobleMcScrunchkin",
 					name: "mc-launcher",
 				},
-				prerelease: true,
+				prerelease: false,
 			},
 		},
 	],
@@ -36,6 +36,7 @@ const config = {
 				options: {
 					icon: "./icons/cube.ico",
 				},
+				remoteReleases: "https://github.com/NoobleMcScrunchkin/mc-launcher",
 			},
 		},
 		{

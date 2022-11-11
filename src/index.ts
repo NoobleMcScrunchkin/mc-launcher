@@ -5,7 +5,14 @@ import { Browser } from "./util/electron/browser";
 import { UserManager } from "./util/minecraft/auth/userManager";
 import { DiscordRPC } from "./util/discord/rpc";
 import { Settings } from "./util/settings";
-require("update-electron-app")();
+import { autoUpdater } from "electron";
+require("update-electron-app")({
+	notifyUser: false,
+});
+
+autoUpdater.on("update-downloaded", () => {
+	Settings.update_downloaded = true;
+});
 
 const rootCas = require("ssl-root-cas").create();
 rootCas.addFile(path.resolve(__dirname, `${process.resourcesPath}/intermediate.pem`));

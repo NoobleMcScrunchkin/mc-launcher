@@ -18,6 +18,7 @@ class SettingsStorage {
 
 export class Settings {
 	static settings_storage: SettingsStorage = new SettingsStorage();
+	static update_downloaded: boolean = false;
 
 	static save_settings(): void {
 		let json = JSON.stringify(Settings.settings_storage);

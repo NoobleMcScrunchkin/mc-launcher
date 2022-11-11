@@ -1,8 +1,9 @@
 {
 	"name": "mc-launcher",
 	"productName": "Custom Minecraft Launcher",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "Custom Minecraft Launcher",
+	"repository": "github:NoobleMcScrunchkin/mc-launcher",
 	"main": ".webpack/main",
 	"icon": "./icons/cube.ico",
 	"scripts": {

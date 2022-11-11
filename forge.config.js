@@ -36,7 +36,7 @@ const config = {
 				options: {
 					icon: "./icons/cube.ico",
 				},
-				remoteReleases: "https://github.com/NoobleMcScrunchkin/mc-launcher",
+				// remoteReleases: "https://github.com/NoobleMcScrunchkin/mc-launcher",
 			},
 		},
 		{

@@ -252,6 +252,7 @@ export class Instance {
 									width: 800,
 									frame: true,
 									autoHideMenuBar: true,
+									icon: path.resolve(process.resourcesPath + "/app.ico"),
 								});
 
 								dl_window.removeMenu();

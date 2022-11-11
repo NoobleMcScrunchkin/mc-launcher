@@ -5,13 +5,37 @@ const path = require("path");
 const config = {
 	packagerConfig: {
 		asar: true,
-		extraResource: ["intermediate.pem"],
+		extraResource: ["intermediate.pem", "icons/app.ico"],
+		icon: "./icons/cube.ico",
 	},
+	config: {
+		forge: {
+			packagerConfig: {
+				icon: "./icons/cube",
+			},
+		},
+	},
+	publishers: [
+		{
+			name: "@electron-forge/publisher-github",
+			config: {
+				repository: {
+					owner: "NoobleMcScrunchkin",
+					name: "mc-launcher",
+				},
+				prerelease: true,
+			},
+		},
+	],
 	makers: [
 		{
 			name: "@electron-forge/maker-squirrel",
 			config: {
 				name: "mc-launcher",
+				setupIcon: "./icons/cube.ico",
+				options: {
+					icon: "./icons/cube.ico",
+				},
 			},
 		},
 		{
@@ -20,7 +44,11 @@ const config = {
 		},
 		{
 			name: "@electron-forge/maker-deb",
-			config: {},
+			config: {
+				options: {
+					icon: "./icons/cube.png",
+				},
+			},
 			platforms: ["linux"],
 		},
 		{
@@ -29,13 +57,17 @@ const config = {
 		},
 		{
 			name: "@electron-forge/maker-dmg",
-			config: {},
+			config: {
+				options: {
+					icon: "./icons/cube.icns",
+				},
+			},
 		},
 	],
 	plugins: [
-		[
-			"@electron-forge/plugin-webpack",
-			{
+		{
+			name: "@electron-forge/plugin-webpack",
+			config: {
 				mainConfig: "./webpack.main.config.js",
 				devContentSecurityPolicy: "connect-src 'self' https://api.myapp.com 'unsafe-eval'",
 				renderer: {
@@ -49,7 +81,7 @@ const config = {
 					],
 				},
 			},
-		],
+		},
 	],
 };
 

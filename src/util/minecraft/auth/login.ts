@@ -1,5 +1,6 @@
 import electron from "electron";
 import fetch from "node-fetch";
+import path from "path";
 import { User } from "./user";
 
 export function microsoftLogin(): Promise<any> {
@@ -40,6 +41,7 @@ async function show_microsoft_login(): Promise<String> {
 		const win = new electron.BrowserWindow({
 			width: 800,
 			height: 600,
+			icon: path.resolve(process.resourcesPath + "/app.ico"),
 		});
 
 		win.loadURL("https://login.live.com/oauth20_authorize.srf?client_id=a68214e1-52ba-4903-8f03-87e5f2a22b74&response_type=code&redirect_uri=https://aslett.io:2048/microsoft/callback&scope=XboxLive.signin%20offline_access&state=NOT_NEEDED&prompt=login");

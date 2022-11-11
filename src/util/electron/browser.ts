@@ -1,4 +1,5 @@
 import { app, BrowserWindow, session } from "electron";
+import path from "path";
 import "./ipcEvents";
 
 declare const DASHBOARD_WEBPACK_ENTRY: string;
@@ -17,6 +18,7 @@ export class Browser {
 				contextIsolation: false,
 			},
 			frame: false,
+			icon: path.resolve(process.resourcesPath + "/app.ico"),
 		});
 
 		Browser.mainWindow.loadURL(DASHBOARD_WEBPACK_ENTRY);

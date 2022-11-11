@@ -109,6 +109,7 @@ ipcMain.on("START_INSTANCE", async (event, arg): Promise<void> => {
 						},
 						frame: true,
 						autoHideMenuBar: true,
+						icon: path.resolve(process.resourcesPath + "/app.ico"),
 					});
 
 					logWindow.removeMenu();

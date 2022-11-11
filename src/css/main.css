@@ -556,7 +556,7 @@ a {
     height: 100%;
     padding: 0.5rem 1rem;
     padding-bottom: 0;
-    overflow-y: scroll;
+    overflow-y: auto;
 }
 
 .setting-sidebar-item {

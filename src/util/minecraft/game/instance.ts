@@ -104,7 +104,7 @@ export class Instance {
 			},
 		});
 
-		let modpack = await modpackRes.json();
+		let modpack: any = await modpackRes.json();
 
 		const download_url = modpack.data.downloadUrl.replaceAll(" ", "%20");
 
@@ -199,7 +199,7 @@ export class Instance {
 					},
 				});
 
-				let project = await projectRes.json();
+				let project: any = await projectRes.json();
 
 				let base_dir = "";
 
@@ -220,7 +220,7 @@ export class Instance {
 								},
 							});
 
-							let mod = await modRes.json();
+							let mod: any = await modRes.json();
 
 							instance.modpack_mods.push(mod.data.fileName);
 
@@ -243,7 +243,7 @@ export class Instance {
 									},
 								});
 
-								let modInfo = await modInfoRes.json();
+								let modInfo: any = await modInfoRes.json();
 
 								let download_url = modInfo.data.links.websiteUrl + "/download/" + file.fileID;
 
@@ -339,7 +339,7 @@ export class Instance {
 			let version = manifest.versions.find((v: any) => v.id == mod_json.inheritsFrom);
 			if (version) {
 				let res = await fetch(version.url);
-				let versionJson = await res.json();
+				let versionJson: any = await res.json();
 
 				if (versionJson.libraries && mod_json.libraries) {
 					versionJson.libraries.push(...mod_json.libraries);
@@ -462,7 +462,7 @@ export class Instance {
 			if (version) {
 				let res = await fetch(version.url);
 				mkdirSync(path.resolve(Storage.resourcesPath + `/Storage/versions/${version.id}/`), { recursive: true });
-				let versionJson = await res.json();
+				let versionJson: any = await res.json();
 				createWriteStream(path.resolve(Storage.resourcesPath + `/Storage/versions/${version.id}/${version.id}.json`)).write(JSON.stringify(versionJson));
 
 				if (versionJson.libraries && mod_json.libraries) {

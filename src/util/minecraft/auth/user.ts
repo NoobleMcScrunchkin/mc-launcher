@@ -26,7 +26,7 @@ export class User {
 				Authorization: "Bearer " + this.mc_token.access_token,
 			},
 		});
-		let json = await res.json();
+		let json: any = await res.json();
 		this.name = json.name;
 		this.uuid = json.id;
 		this.skins = json.skins;

@@ -217,13 +217,13 @@ ipcMain.handle("GET_VERSIONS", async (event, arg): Promise<any> => {
 	if (arg.modloader) {
 		if (arg.modloader == "fabric") {
 			let res = await fetch("https://meta.fabricmc.net/v2/versions/loader");
-			let json = await res.json();
+			let json: any = await res.json();
 			return json.map((v: any) => {
 				return { id: v.version };
 			});
 		} else if (arg.modloader == "forge") {
 			let res = await fetch("https://files.minecraftforge.net/net/minecraftforge/forge/maven-metadata.json");
-			let json = await res.json();
+			let json: any = await res.json();
 			return json[arg.version]
 				.map((v: any) => {
 					return { id: v.split("-")[1] };
@@ -241,7 +241,7 @@ ipcMain.handle("GET_MODPACKS", async (event, arg): Promise<any> => {
 			"x-api-key": "$2a$10$T8MZffSoJ/6HMP1FAAqJe.YLrpCHttNPSCNU3Rs85Q8BRzgOpd/Ai",
 		},
 	});
-	let json = await res.json();
+	let json: any = await res.json();
 	return json.data;
 });
 
@@ -251,7 +251,7 @@ ipcMain.handle("GET_MODPACK_SUMMARY", async (event, arg): Promise<any> => {
 			"x-api-key": "$2a$10$T8MZffSoJ/6HMP1FAAqJe.YLrpCHttNPSCNU3Rs85Q8BRzgOpd/Ai",
 		},
 	});
-	let json = await res.json();
+	let json: any = await res.json();
 	return json.data;
 });
 
@@ -261,7 +261,7 @@ ipcMain.handle("GET_MODPACK_VERSIONS", async (event, arg): Promise<any> => {
 			"x-api-key": "$2a$10$T8MZffSoJ/6HMP1FAAqJe.YLrpCHttNPSCNU3Rs85Q8BRzgOpd/Ai",
 		},
 	});
-	let json = await res.json();
+	let json: any = await res.json();
 	return json.data;
 });
 
@@ -340,7 +340,7 @@ ipcMain.handle("DOWNLOAD_JAVA", async (event, arg): Promise<any> => {
 	os = os == "darwin" ? "mac" : os;
 
 	let java8res = await fetch("https://api.adoptium.net/v3/assets/latest/8/hotspot?image_type=jre");
-	let java8json = await java8res.json();
+	let java8json: any = await java8res.json();
 
 	let java8obj = java8json.find((v: any) => {
 		return v.binary.architecture == "x64" && v.binary.os == os;
@@ -420,7 +420,7 @@ ipcMain.handle("DOWNLOAD_JAVA", async (event, arg): Promise<any> => {
 	}
 
 	let java17res = await fetch("https://api.adoptium.net/v3/assets/latest/17/hotspot?image_type=jre");
-	let java17json = await java17res.json();
+	let java17json: any = await java17res.json();
 
 	let java17obj = java17json.find((v: any) => {
 		return v.binary.architecture == "x64" && v.binary.os == os;

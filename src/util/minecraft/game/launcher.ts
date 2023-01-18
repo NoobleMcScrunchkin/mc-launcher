@@ -55,18 +55,20 @@ export async function startGame(instance: Instance, started_callback: () => void
 
 	let java_path: string;
 	if (instance.java_version <= 8) {
-		java_path = Settings.get_key("java8_path");
+		java_path = Settings.get_key("java8_path") + "/java";
 		if (java_path == "" || !existsSync(java_path)) {
 			throw "Java 8 path is invalid (Run setup in settings)";
 		}
 	} else {
-		java_path = Settings.get_key("java17_path");
+		java_path = Settings.get_key("java17_path") + "/java";
 		if (java_path == "" || !existsSync(java_path)) {
 			throw "Java 17 path is invalid (Run setup in settings)";
 		}
 	}
 
-	const javaRuntime = exec(`${process.platform == "win32" ? "&" : ""}${java_path} ${processCallStr}`, { shell: process.platform == "win32" ? "powershell" : undefined, cwd: instance.mc_dir }, (error, stdout, stderr) => {
+	let ext = process.platform.toString() == "win32" ? ".exe" : "";
+
+	const javaRuntime = exec(`${process.platform == "win32" ? "&" : ""}${java_path}${ext} ${processCallStr}`, { shell: process.platform == "win32" ? "powershell" : undefined, cwd: instance.mc_dir }, (error, stdout, stderr) => {
 		if (error) {
 			console.log(`error: ${error.message}`);
 			var lines = error.message.split("\n");

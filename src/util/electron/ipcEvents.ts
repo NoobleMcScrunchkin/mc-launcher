@@ -419,7 +419,7 @@ ipcMain.handle("DOWNLOAD_JAVA", async (event, arg): Promise<any> => {
 		}
 	}
 
-	let java17res = await fetch("https://api.adoptium.net/v3/assets/latest/17/hotspot?image_type=jre");
+	let java17res = await fetch("https://api.adoptium.net/v3/assets/latest/17/hotspot?image_type=jdk");
 	let java17json: any = await java17res.json();
 
 	let java17obj = java17json.find((v: any) => {
@@ -499,13 +499,11 @@ ipcMain.handle("DOWNLOAD_JAVA", async (event, arg): Promise<any> => {
 		}
 	}
 
-	let ext = os == "windows" ? ".exe" : "";
-
-	Settings.set_key("java8_path", java8Installed ? path.resolve(Storage.resourcesPath + `/Storage/java/java8/bin/java${ext}`) : "");
-	Settings.set_key("java17_path", java8Installed ? path.resolve(Storage.resourcesPath + `/Storage/java/java17/bin/java${ext}`) : "");
+	Settings.set_key("java8_path", java8Installed ? path.resolve(Storage.resourcesPath + `/Storage/java/java8/${os == "mac" ? "Contents/Home/" : ""}bin`) : "");
+	Settings.set_key("java17_path", java8Installed ? path.resolve(Storage.resourcesPath + `/Storage/java/java17/${os == "mac" ? "Contents/Home/" : ""}bin`) : "");
 
 	console.log("Finished Downloading Java");
-	return { java8: java8Installed ? path.resolve(Storage.resourcesPath + `/Storage/java/java8/bin/java${ext}`) : "", java17: java17Installed ? path.resolve(Storage.resourcesPath + `/Storage/java/java17/bin/java${ext}`) : "" };
+	return { java8: java8Installed ? path.resolve(Storage.resourcesPath + `/Storage/java/java8/${os == "mac" ? "Contents/Home/" : ""}bin`) : "", java17: java17Installed ? path.resolve(Storage.resourcesPath + `/Storage/java/java17/${os == "mac" ? "Contents/Home/" : ""}bin`) : "" };
 });
 
 ipcMain.handle("GET_UPDATED_DOWNLOADED", async (event, arg): Promise<any> => {

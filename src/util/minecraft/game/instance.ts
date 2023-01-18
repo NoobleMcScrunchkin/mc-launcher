@@ -11,6 +11,7 @@ import { BrowserWindow } from "electron";
 import { InstanceManager } from "./instanceManager";
 import crypto from "crypto";
 import * as semver from "semver";
+import { Settings } from "../../settings";
 
 function get_platform() {
 	let platform = process.platform;
@@ -400,7 +401,12 @@ export class Instance {
 
 			await ((): Promise<void> => {
 				return new Promise((resolve, reject) => {
-					let jar = exec(`jar xvf forge-${this.version}-${this.loader_version}-installer.jar`, { cwd: installerDirPath }, (error, stdout, stderr) => {
+					let java_path = Settings.get_key("java17_path") + "/jar";
+					if (java_path == "" || !existsSync(java_path)) {
+						throw "Java 17 path is invalid (Run setup in settings)";
+					}
+					let ext = process.platform.toString() == "win32" ? ".exe" : "";
+					let jar = exec(`${java_path}${ext} xvf forge-${this.version}-${this.loader_version}-installer.jar`, { cwd: installerDirPath }, (error, stdout, stderr) => {
 						if (error) {
 							console.log(`error: ${error.message}`);
 							reject(error);
@@ -520,7 +526,12 @@ export class Instance {
 
 					await ((): Promise<void> => {
 						return new Promise((resolve, reject) => {
-							let jar = exec(`jar xf ${jarExe} META-INF/MANIFEST.MF`, { cwd: jarPath }, (error, stdout, stderr) => {
+							let java_path = Settings.get_key("java17_path") + "/jar";
+							if (java_path == "" || !existsSync(java_path)) {
+								throw "Java 17 path is invalid (Run setup in settings)";
+							}
+							let ext = process.platform.toString() == "win32" ? ".exe" : "";
+							let jar = exec(`${java_path}${ext} xf ${jarExe} META-INF/MANIFEST.MF`, { cwd: jarPath }, (error, stdout, stderr) => {
 								if (error) {
 									console.log(`error: ${error.message}`);
 									reject(error);
@@ -585,7 +596,12 @@ export class Instance {
 
 					await ((): Promise<void> => {
 						return new Promise((resolve, reject) => {
-							let jar = exec(`java -cp ${classPath} ${mainClass} ${args.join(" ")}`, { cwd: jarPath }, (error, stdout, stderr) => {
+							let java_path = Settings.get_key("java17_path") + "/java";
+							if (java_path == "" || !existsSync(java_path)) {
+								throw "Java 17 path is invalid (Run setup in settings)";
+							}
+							let ext = process.platform.toString() == "win32" ? ".exe" : "";
+							let jar = exec(`${java_path}${ext} -cp ${classPath} ${mainClass} ${args.join(" ")}`, { cwd: jarPath }, (error, stdout, stderr) => {
 								if (error) {
 									console.log(`error: ${error.message}`);
 									reject(error);

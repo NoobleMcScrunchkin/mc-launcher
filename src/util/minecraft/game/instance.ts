@@ -402,10 +402,10 @@ export class Instance {
 			await ((): Promise<void> => {
 				return new Promise((resolve, reject) => {
 					let java_path = Settings.get_key("java17_path") + "/jar";
-					if (java_path == "" || !existsSync(java_path)) {
+					let ext = process.platform.toString() == "win32" ? ".exe" : "";
+					if (java_path == "" || !existsSync(java_path + ext)) {
 						throw "Java 17 path is invalid (Run setup in settings)";
 					}
-					let ext = process.platform.toString() == "win32" ? ".exe" : "";
 					let jar = exec(`${java_path}${ext} xvf forge-${this.version}-${this.loader_version}-installer.jar`, { cwd: installerDirPath }, (error, stdout, stderr) => {
 						if (error) {
 							console.log(`error: ${error.message}`);
@@ -527,10 +527,10 @@ export class Instance {
 					await ((): Promise<void> => {
 						return new Promise((resolve, reject) => {
 							let java_path = Settings.get_key("java17_path") + "/jar";
-							if (java_path == "" || !existsSync(java_path)) {
+							let ext = process.platform.toString() == "win32" ? ".exe" : "";
+							if (java_path == "" || !existsSync(java_path + ext)) {
 								throw "Java 17 path is invalid (Run setup in settings)";
 							}
-							let ext = process.platform.toString() == "win32" ? ".exe" : "";
 							let jar = exec(`${java_path}${ext} xf ${jarExe} META-INF/MANIFEST.MF`, { cwd: jarPath }, (error, stdout, stderr) => {
 								if (error) {
 									console.log(`error: ${error.message}`);

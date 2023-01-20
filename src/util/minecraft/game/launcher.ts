@@ -54,19 +54,18 @@ export async function startGame(instance: Instance, started_callback: () => void
 		.replaceAll("${library_directory}", path.resolve(Storage.resourcesPath + "/Storage/libraries/"));
 
 	let java_path: string;
+	let ext = process.platform.toString() == "win32" ? ".exe" : "";
 	if (instance.java_version <= 8) {
 		java_path = Settings.get_key("java8_path") + "/java";
-		if (java_path == "" || !existsSync(java_path)) {
+		if (java_path == "" || !existsSync(java_path + ext)) {
 			throw "Java 8 path is invalid (Run setup in settings)";
 		}
 	} else {
 		java_path = Settings.get_key("java17_path") + "/java";
-		if (java_path == "" || !existsSync(java_path)) {
+		if (java_path == "" || !existsSync(java_path + ext)) {
 			throw "Java 17 path is invalid (Run setup in settings)";
 		}
 	}
-
-	let ext = process.platform.toString() == "win32" ? ".exe" : "";
 
 	const javaRuntime = exec(`${process.platform == "win32" ? "&" : ""}${java_path}${ext} ${processCallStr}`, { shell: process.platform == "win32" ? "powershell" : undefined, cwd: instance.mc_dir }, (error, stdout, stderr) => {
 		if (error) {
